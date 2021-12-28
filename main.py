@@ -1,11 +1,10 @@
 import discord
 from discord.ext import commands
 import os
+from config import *
 os.chdir(".")
 
 client = commands.Bot(command_prefix="water ")
-
-TOKEN = "ODQ5MzM2NzU2NjA3MTIzNDk2.YLZsfg.sRCxPsyBo3vWQIHYlv-iyQvtwUg"
 
 for filename in os.listdir(r"./cogs"):
     if filename.endswith(".py"):
