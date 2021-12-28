@@ -1,0 +1,34 @@
+{
+    "users": [
+        {
+            "337710732458328065": {
+                "close_damage": "40",
+                "long_damage": "20",
+                "close_range": 100.0,
+                "long_range": 300.0,
+                "multiplier": 1.5,
+                "rpm": 900.0
+            }
+        },
+        {
+            "759657256911503401": {
+                "close_damage": "30",
+                "long_damage": "20",
+                "close_range": 150.0,
+                "long_range": 700.0,
+                "multiplier": 1.1,
+                "rpm": 900.0
+            }
+        },
+        {
+            "150560836971266048": {
+                "close_damage": "30",
+                "long_damage": "20",
+                "close_range": 150.0,
+                "long_range": 700.0,
+                "multiplier": 1.1,
+                "rpm": 900.0
+            }
+        }
+    ]
+}
