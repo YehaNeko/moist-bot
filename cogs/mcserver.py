@@ -91,7 +91,7 @@ class Mcserver(commands.Cog):
         """Starts minecraft server"""
         exa.start("4ksE0Nc5qCNb7ZYn")
 
-        await ctx.reply("Server started")
+        await ctx.reply("Server started.")
 
     @mcserver.command(clean_params=True)
     @is_whitelisted()
