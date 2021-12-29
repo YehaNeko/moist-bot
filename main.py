@@ -22,7 +22,6 @@ async def reload(ctx, ext="cmds"):
         await ctx.reply("You don't have permission to use this.")
 @reload.error
 async def on_error(ctx, error):
-
     if isinstance(getattr(error, 'original', error), (discord.ExtensionNotLoaded, discord.ExtensionNotFound)):
         await ctx.reply(f"Idiot, that's not a cog.")
 
