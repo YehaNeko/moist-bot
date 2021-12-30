@@ -6,7 +6,9 @@ with open("whitelist.json") as d:
     data = json.load(d)
 
 from exaroton import Exaroton
+
 exa = Exaroton("vHN2DxdsADfOkCVZU4tPlEGdYsGBf5e2Z1W87Ji24RBnsY1ngFw8VkvpNtvsvSPyNM1G9alr2cqzCTdIrjuC6qb2ajHc2brRBGG4")
+server_key = "4ksE0Nc5qCNb7ZYn"
 
 
 class NotWhitelisted(commands.CheckFailure):
@@ -22,18 +24,21 @@ def is_whitelisted():
         if ctx.author.id not in data["whitelisted"]:
             raise NotWhitelisted()
         return True
+
     return commands.check(predicate)
 
 
 def is_owner():
     async def predicate(ctx):
         return ctx.author.id == 150560836971266048
+
     return commands.check(predicate)
 
 
 class Mcserver(commands.Cog):
     def __init__(self, client):
         self.client = client
+
     global data
 
     @commands.Cog.listener()
@@ -61,6 +66,7 @@ class Mcserver(commands.Cog):
             json.dump(data, f, indent=3)
 
         await ctx.reply(f"Whitelisted `{user.display_name}`.")
+
     @add.error
     async def on_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
@@ -79,7 +85,9 @@ class Mcserver(commands.Cog):
 
         with open("whitelist.json", "w") as f:
             json.dump(data, f, indent=3)
+
         await ctx.reply(f"`{user.display_name}` was removed from the whitelist.")
+
     @remove.error
     async def on_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
@@ -98,6 +106,25 @@ class Mcserver(commands.Cog):
     async def list(self, ctx):
         """Raw current whitelist"""
         await ctx.reply(f"Current raw whitelist: `{str(data['whitelisted'])}`")
+
+    @mcserver.command(clean_params=True)
+    @is_whitelisted()
+    async def execute(self, ctx, *, cmd):
+        """Execute a command on the server"""
+        # TODO: make async
+        exa.command(server_key, cmd)
+
+        await ctx.reply(f"Executed `{cmd}`.")
+
+    @mcserver.command(clean_params=True)
+    async def say(self, ctx, *, text):
+        # TODO: make async
+        exa.command(server_key,
+                    'tellraw @a [{"bold":true, "text":"%s "}, ' % ctx.author.display_name +
+                    '{"bold":false, "text":"says: %s"}]' % text
+                    )
+
+        await ctx.reply(f"Said `{text}`.")
 
 
 def setup(client):
