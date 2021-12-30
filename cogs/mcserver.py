@@ -5,9 +5,10 @@ import json
 with open("whitelist.json") as d:
     data = json.load(d)
 
+from config import EXAROTON_TOKEN
 from exaroton import Exaroton
 
-exa = Exaroton("vHN2DxdsADfOkCVZU4tPlEGdYsGBf5e2Z1W87Ji24RBnsY1ngFw8VkvpNtvsvSPyNM1G9alr2cqzCTdIrjuC6qb2ajHc2brRBGG4")
+exa = Exaroton(EXAROTON_TOKEN)
 server_key = "4ksE0Nc5qCNb7ZYn"
 
 
