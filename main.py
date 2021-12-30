@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 import os
-from config import *
+from config import TOKEN
 os.chdir(".")
 
 client = commands.Bot(command_prefix="water ")
