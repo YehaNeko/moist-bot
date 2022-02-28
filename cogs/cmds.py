@@ -8,13 +8,18 @@ class Cmds(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    # Commands
     @commands.command()
     async def ping(self, ctx, *, args: str = "Pong!"):
         before = time.monotonic()
         message = await ctx.reply(f"{args}")
         ping = (time.monotonic() - before) * 1000
         await message.edit(content=f"{args} in {int(ping)}ms")
+
+    """
+    @commands.command()
+    async def ping(self, ctx, *, args: str = "Pong!"):
+        await ctx.reply(f"{args} in {round(self.client.latency) * 1000}ms")
+    """
 
     @commands.command(name="stutter")
     async def stutter_filter(self, ctx, *, msg):
