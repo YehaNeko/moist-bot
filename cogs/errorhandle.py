@@ -3,6 +3,7 @@ import traceback
 import discord
 from discord.ext import commands
 
+# Custom errors
 from cogs.mcserver import NotWhitelisted
 
 
@@ -34,8 +35,12 @@ class ErrorHandler(commands.Cog):
         if isinstance(error, ignored):
             return
 
+        if isinstance(error, commands.CommandOnCooldown):
+            return await ctx.reply(f"You are on cooldown. Try again in {(seconds := round(error.retry_after))} seconds.",
+                                   delete_after=seconds+1)
+
         if isinstance(error, commands.DisabledCommand):
-            await ctx.send(f'{ctx.command} has been disabled.')
+            await ctx.reply(f'{ctx.command} has been disabled.')
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
@@ -58,7 +63,7 @@ class ErrorHandler(commands.Cog):
                 f'Error in guild "{ctx.guild}", triggered by {ctx.author}, with command "{ctx.command}"',
                 file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            print("\n\n\n")
+            print("\n\n")
 
 
 def setup(client):
