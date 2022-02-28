@@ -30,7 +30,7 @@ class PfGunEmbed(discord.Embed):
                   multiplier: float,
                   rpm: float = None
 
-    ) -> discord.Embed:
+                  ) -> discord.Embed:
         """
         Generate embed fields
         """
@@ -185,16 +185,14 @@ class Pfgun(commands.Cog):
         return str(user.id)
 
     @commands.group(brief="Phantom Forces damage range calculator", invoke_without_command=True)
-    async def pfgun(
-            self,
-            ctx: commands.Context,
-            close_damage: str,
-            long_damage: str,
-            close_range: float,
-            long_range: float,
-            multiplier: float,
-            rpm: float = None
-    ):
+    async def pfgun(self,
+                    ctx: commands.Context,
+                    close_damage: str,
+                    long_damage: str,
+                    close_range: float,
+                    long_range: float,
+                    multiplier: float,
+                    rpm: float = None):
         """ Main command """
 
         embed = PfGunEmbed(ctx).gen_embed(*ctx.args[2:])
