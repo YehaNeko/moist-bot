@@ -13,11 +13,44 @@ handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w'
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(handler)
 
-client = commands.Bot(command_prefix="water ")
 
-for filename in os.listdir(r"./cogs"):
-    if filename.endswith(".py"):
-        client.load_extension(f"cogs.{filename[:-3]}")
+class MoistBot(commands.Bot):
+    def __init__(self):
+        allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
+        intents = discord.Intents(
+            emojis_and_stickers=True,
+            guilds=True,
+            invites=True,
+            members=True,
+            message_content=True,
+            messages=True,
+            reactions=True,
+            scheduled_events=True,
+            typing=True,
+            webhooks=True,
+            bans=False,
+            presences=False,
+            dm_typing=False,
+            guild_typing=False,
+            integrations=False,
+            voice_states=False,
+        )
+        super(MoistBot, self).__init__(
+            command_prefix="water ",
+            allowed_mentions=allowed_mentions,
+            intents=intents
+        )
+
+        for filename in os.listdir(r"./cogs"):
+            if filename.endswith(".py"):
+                try:
+                    self.load_extension(f"cogs.{filename[:-3]}")
+                except Exception as e:
+                    print(f'Failed to load extension {filename}.', file=sys.stderr)
+                    traceback.print_exc()
+
+
+client = MoistBot()
 
 
 @client.command()
