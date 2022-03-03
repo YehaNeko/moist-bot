@@ -25,7 +25,7 @@ class ErrorHandler(commands.Cog):
             if cog._get_overridden_method(cog.cog_command_error) is not None:
                 return
 
-        ignored = (commands.CommandNotFound, NotWhitelisted, )
+        ignored = (commands.CommandNotFound, NotWhitelisted,)
 
         # Allows us to check for original exceptions raised and sent to CommandInvokeError.
         # If nothing is found. We keep the exception passed to on_command_error.
@@ -35,11 +35,11 @@ class ErrorHandler(commands.Cog):
         if isinstance(error, ignored):
             return
 
-        if isinstance(error, commands.CommandOnCooldown):
-            return await ctx.reply(f"You are on cooldown. Try again in {(seconds := round(error.retry_after))} seconds.",
-                                   delete_after=seconds+1)
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.reply(f"You are on cooldown. Try again in {(seconds := round(error.retry_after))} seconds.",
+                            delete_after=seconds + 1)
 
-        if isinstance(error, commands.DisabledCommand):
+        elif isinstance(error, commands.DisabledCommand):
             await ctx.reply(f'{ctx.command} has been disabled.')
 
         elif isinstance(error, commands.NoPrivateMessage):
