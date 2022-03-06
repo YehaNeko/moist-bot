@@ -218,6 +218,7 @@ class Pfgun(commands.Cog):
         def aproximate_r1(_r1):
             return 35 + (_r1 * 0.165)
 
+        # Apply modifiers
         params["close_damage"] = str(float(params["close_damage"]) * 1.2)
         params["long_damage"] = str(round(float(params["long_damage"]) * (5 / 6), 2))
         params["long_range"] = params["long_range"] * 0.9
@@ -233,6 +234,8 @@ class Pfgun(commands.Cog):
                       f"\nError margin: +- 1 stud",
                 inline=False,
             )
+
+        # Update embed
         embed.gen_embed(**params)
 
         await ctx.reply(embed=embed)
@@ -247,12 +250,12 @@ class Pfgun(commands.Cog):
 
         embed = PfGunEmbed(ctx)
 
-        # Update embed
-        embed.set_footer(text="Showing values for AP ammo type")
-
+        # Apply modifiers
         params["close_range"] = params["close_range"] * 0.5
 
+        # Update embed
         embed.gen_embed(**params)
+        embed.set_footer(text="Showing values for AP ammo type")
 
         await ctx.reply(embed=embed)
 
@@ -283,10 +286,10 @@ class Pfgun(commands.Cog):
         # Update embed
         embed.set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
 
+        await ctx.reply(embed=embed)
+
         # Cache
         cache_arg(list(chain.from_iterable([[ctx], params.values()])))
-
-        await ctx.reply(embed=embed)
 
     @pfgun.command(clean_params=True)
     async def rpm(self, ctx, rpm: Union[int, float]):
@@ -298,6 +301,7 @@ class Pfgun(commands.Cog):
         params["rpm"] = rpm
 
         # Update embed
+        embed.gen_embed(**params)
         embed.set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
 
         await ctx.reply(embed=embed)
@@ -315,13 +319,13 @@ class Pfgun(commands.Cog):
         params["multiplier"] = multiplier
 
         # Update embed
+        embed.gen_embed(**params)
         embed.set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
-
-        # Cache
-        cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
         await ctx.reply(embed=embed)
 
+        # Cache
+        cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
 def setup(client):
     client.add_cog(Pfgun(client))
