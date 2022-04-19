@@ -16,18 +16,19 @@ logger.addHandler(handler)
 
 class MoistBot(commands.Bot):
     def __init__(self):
-        allowed_mentions = discord.AllowedMentions(roles=False, everyone=False, users=True, replied_user=True)
+        allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
         intents = discord.Intents(
             emojis_and_stickers=True,
             guilds=True,
+            # guild_scheduled_events=True,
             invites=True,
             members=True,
             message_content=True,
             messages=True,
             reactions=True,
-            scheduled_events=True,
             typing=True,
             webhooks=True,
+            # value=True,
             bans=False,
             presences=False,
             dm_typing=False,
@@ -35,16 +36,18 @@ class MoistBot(commands.Bot):
             integrations=False,
             voice_states=False,
         )
-        super(MoistBot, self).__init__(
-            command_prefix="water ",
+        super().__init__(
+            case_insensitive=True,
+            command_prefix=commands.when_mentioned_or("water "),
             allowed_mentions=allowed_mentions,
             intents=intents
         )
 
+    async def setup_hook(self):
         for filename in os.listdir(r"./cogs"):
             if filename.endswith(".py"):
                 try:
-                    self.load_extension(f"cogs.{filename[:-3]}")
+                    await self.load_extension(f"cogs.{filename[:-3]}")
                 except Exception as e:
                     print(f'Failed to load extension {filename}.', file=sys.stderr)
                     traceback.print_exc()
@@ -57,14 +60,14 @@ client = MoistBot()
 async def reload(ctx, ext="cmds"):
     if ctx.author.id == 150560836971266048:
 
-        client.reload_extension(f"cogs.{ext}")
+        await client.reload_extension(f"cogs.{ext}")
         await ctx.reply(f"Reloaded {ext}.")
 
     else:
         await ctx.reply("You don't have permission to use this.")
 @reload.error
 async def on_error(ctx, error):
-    if isinstance(getattr(error, 'original', error), (discord.ExtensionNotLoaded, discord.ExtensionNotFound)):
+    if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
         await ctx.reply(f"Idiot, that's not a cog.")
 
     else:
@@ -75,6 +78,6 @@ async def on_error(ctx, error):
 @commands.Bot.listen(client)
 async def on_ready():
     await client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
-    print(f"Logged in as {client.user}")
+    print(f"Logged in as {client.user}\n")
 
 client.run(TOKEN)

@@ -68,8 +68,8 @@ class Cmds(commands.Cog):
 
 
 # Activate cog
-def setup(client):
-    client.add_cog(Cmds(client))
+async def setup(client):
+    await client.add_cog(Cmds(client))
 
 
 # Helper functions

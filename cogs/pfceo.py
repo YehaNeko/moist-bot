@@ -35,5 +35,5 @@ class Pfceo(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-def setup(client):
-    client.add_cog(Pfceo(client))
+async def setup(client):
+    await client.add_cog(Pfceo(client))

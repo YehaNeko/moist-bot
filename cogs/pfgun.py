@@ -184,7 +184,7 @@ class Pfgun(commands.Cog):
 
         return str(user.id)
 
-    @commands.group(brief="Phantom Forces damage range calculator", invoke_without_command=True)
+    @commands.group(brief="Phantom Forces damage range calculator.", invoke_without_command=True)
     async def pfgun(self,
                     ctx: commands.Context,
                     close_damage: str,
@@ -327,5 +327,6 @@ class Pfgun(commands.Cog):
         # Cache
         cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
-def setup(client):
-    client.add_cog(Pfgun(client))
+
+async def setup(client):
+    await client.add_cog(Pfgun(client))

@@ -19,7 +19,7 @@ class Gay(commands.Cog):
         Totally doesn't rip off dank memer.
         """
 
-        # Get member and avatar
+        # Parse arguments
         try:
             user_conv = await commands.MemberConverter().convert(ctx, user)
         except commands.MemberNotFound:
@@ -51,5 +51,5 @@ class Gay(commands.Cog):
         os.remove("./assets/img.png")
 
 
-def setup(client):
-    client.add_cog(Gay(client))
+async def setup(client):
+    await client.add_cog(Gay(client))

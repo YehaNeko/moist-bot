@@ -21,5 +21,5 @@ class Pfmacro(commands.Cog):
         os.remove("macro.ahk")
 
 
-def setup(client):
-    client.add_cog(Pfmacro(client))
+async def setup(client):
+    await client.add_cog(Pfmacro(client))

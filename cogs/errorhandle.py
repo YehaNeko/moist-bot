@@ -66,7 +66,7 @@ class ErrorHandler(commands.Cog):
             print("\n\n")
 
 
-def setup(client):
-    client.add_cog(ErrorHandler(client))
+async def setup(client):
+    await client.add_cog(ErrorHandler(client))
 
 # Modified from https://gist.github.com/EvieePy/7822af90858ef65012ea500bcecf1612

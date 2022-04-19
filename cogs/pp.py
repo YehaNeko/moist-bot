@@ -1,24 +1,37 @@
 import discord
 from discord.ext import commands
-import random
+
+from random import randint
+import datetime
 
 
 class Pp(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command(name="pp")
-    async def pp(self, ctx):
-        msg_list = ["8"]
+    @commands.command()
+    async def pp(self, ctx, *, user: str = None):
+        """ Measure your pp. """
+        user = await commands.MemberConverter().convert(ctx, user) if user else ctx.author
 
-        for _ in range(random.randint(0, 200)):
-            msg_list.append("=")
+        embed = discord.Embed(
+            color=discord.Color.magenta(),
+            timestamp=datetime.datetime.utcnow(),
+        )
+        embed.set_author(
+            name=user.display_name + "'s pp",
+            icon_url=user.display_avatar.url
+        )
 
-        msg_list.append("D")
-        msg = "".join(msg_list)
+        # NOT RIGGED
+        rigged = [150560836971266048, 311184299623972864, ]
+        size = randint(0, 30) if user.id not in rigged else randint(200, 500)
 
-        await ctx.reply(msg)
+        peepee = "8" + "="*size + "D"
+        embed.add_field(name=f"{size}cm long", value=peepee)
+
+        await ctx.reply(embed=embed)
 
 
-def setup(client):
-    client.add_cog(Pp(client))
+async def setup(client):
+    await client.add_cog(Pp(client))

@@ -5,8 +5,8 @@ import json
 with open("whitelist.json") as d:
     data = json.load(d)
 
-from config import EXAROTON_TOKEN
 from exaroton import Exaroton
+from config import EXAROTON_TOKEN
 
 exa = Exaroton(EXAROTON_TOKEN)
 server_key = "4ksE0Nc5qCNb7ZYn"
@@ -68,13 +68,14 @@ class Mcserver(commands.Cog):
 
     @add.error
     async def on_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            await ctx.reply("You don't have permission to use this command.")
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.reply("Missing user to whitelist.")
 
     @mcserver.command()
     @is_whitelisted()
-    async def remove(self, ctx: commands.Context, *, user: discord.Member = None):
+    async def remove(self, ctx: commands.Context, *, user: commands.MemberConverter):
         """Removes user from whitelist"""
+        user: discord.Member
 
         # Check and remove from whitelist
         try:
@@ -90,13 +91,13 @@ class Mcserver(commands.Cog):
     @remove.error
     async def on_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.reply("Missing user to whitelist.")
+            await ctx.reply("Missing user to remove from the whitelist.")
 
     @mcserver.command()
     @is_whitelisted()
     async def start(self, ctx: commands.Context):
         """Starts minecraft server"""
-        await self.execute(None, exa.start, "4ksE0Nc5qCNb7ZYn")
+        await self.execute(None, exa.start, server_key)
 
         await ctx.reply("Server started.")
 
@@ -126,5 +127,5 @@ class Mcserver(commands.Cog):
         await ctx.reply(f"Current raw whitelist: `{str(data['whitelisted'])}`")
 
 
-def setup(client):
-    client.add_cog(Mcserver(client))
+async def setup(client):
+    await client.add_cog(Mcserver(client))

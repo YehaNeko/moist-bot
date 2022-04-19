@@ -29,5 +29,5 @@ class SheetConverter(commands.Cog):
             os.remove(file)
 
 
-def setup(client):
-    client.add_cog(SheetConverter(client))
+async def setup(client):
+    await client.add_cog(SheetConverter(client))
