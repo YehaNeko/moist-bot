@@ -23,10 +23,11 @@ class Avatar(commands.Cog):
         user = await commands.MemberConverter().convert(ctx, user) if user else ctx.author
 
         embeds = []
-        avatar_url = user.guild_avatar.url if (has_guild_avatar := hasattr(user, "guild_avatar")) else user.avatar.url
+        avatar_url = user.guild_avatar.url if (has_ga := (hasattr(user, "guild_avatar")) and user.guild_avatar)\
+            else user.avatar.url
 
         # First embed
-        embed = AvatarEmbed(has_guild_avatar)\
+        embed = AvatarEmbed(has_ga)\
             .set_author(
             name=user.display_name + "'s avatar",
             url=avatar_url
@@ -38,7 +39,7 @@ class Avatar(commands.Cog):
         embeds.append(embed)
 
         # Second embed
-        if has_guild_avatar:
+        if has_ga:
             avatar_url = user.avatar.url  # Get base avatar
             embed2 = AvatarEmbed()\
                 .set_author(
