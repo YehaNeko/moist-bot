@@ -64,6 +64,8 @@ class ErrorHandler(commands.Cog):
                 file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             print("\n\n")
+            await ctx.reply(f":anger: Command raised unhandled error:\n"
+                            f"`{error}`")
 
 
 async def setup(client):
