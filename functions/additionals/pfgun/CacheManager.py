@@ -2,7 +2,7 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 
 
-# ThreadPoolExecutor with 1 worker so tasks are ran in sequence
+# ThreadPoolExecutor with 1 worker so tasks run in sequence
 executor = ThreadPoolExecutor(max_workers=1)
 
 
