@@ -20,7 +20,7 @@ class Health(commands.Cog):
 
     @commands.command(hidden=True, name="health", aliases=["stats"])
     @commands.is_owner()
-    async def bot_health(self, ctx):
+    async def bothealth(self, ctx):
         """Various bot health monitoring tools."""
 
         # This uses a lot of private methods because there is no
