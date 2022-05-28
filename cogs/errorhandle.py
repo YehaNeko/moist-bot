@@ -25,7 +25,7 @@ class ErrorHandler(commands.Cog):
             if cog._get_overridden_method(cog.cog_command_error) is not None:
                 return
 
-        ignored = (commands.CommandNotFound, NotWhitelisted,)
+        ignored = (commands.CommandNotFound, commands.NotOwner, NotWhitelisted, )
 
         # Allows us to check for original exceptions raised and sent to CommandInvokeError.
         # If nothing is found. We keep the exception passed to on_command_error.
@@ -52,7 +52,7 @@ class ErrorHandler(commands.Cog):
             await ctx.reply(f"Missing required parameter `{error.param.name}`.")
 
         elif isinstance(error, commands.MemberNotFound):
-            await ctx.reply("Member not found.")
+            await ctx.reply(f"Member `{error.argument}` not found.")
 
         elif isinstance(error, commands.BadArgument):
             await ctx.reply(f"Bad parameter in `{ctx.current_parameter}`.")
@@ -63,7 +63,7 @@ class ErrorHandler(commands.Cog):
                 f'Error in guild "{ctx.guild}", triggered by {ctx.author}, with command "{ctx.command}"',
                 file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            print("\n\n")
+            print("-----------\n\n")
             await ctx.reply(f":anger: Command raised unhandled error:\n"
                             f"`{error}`")
 
