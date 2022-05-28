@@ -22,15 +22,16 @@ class PfGunEmbed(discord.Embed):
             icon_url=ctx.author.avatar.url
         )
 
-    def gen_embed(self,
-                  close_damage: str,
-                  long_damage: str,
-                  close_range: float,
-                  long_range: float,
-                  multiplier: float,
-                  rpm: float = None
+    def gen_embed(
+            self,
+            close_damage: str,
+            long_damage: str,
+            close_range: float,
+            long_range: float,
+            multiplier: float,
+            rpm: float = None
 
-                  ) -> discord.Embed:
+    ) -> discord.Embed:
         """
         Generate embed fields
         """
@@ -131,9 +132,11 @@ class PfGunEmbed(discord.Embed):
             prev_range_value = 0
 
             for s in range(1, len(shots_to_damage) + 1):
-                ranges = calculate_range(s,
-                                         float(close_damage) * multiplier,
-                                         float(long_damage) * multiplier)
+                ranges = calculate_range(
+                    s,
+                    float(close_damage) * multiplier,
+                    float(long_damage) * multiplier
+                )
 
                 # invalid range
                 if ranges is None:
@@ -174,7 +177,7 @@ class Pfgun(commands.Cog):
 
     @staticmethod
     async def get_user_id(ctx, user: Union[discord.Member, str]) -> str:
-        """ Returns string of user.id or ctx.author.id """
+        """ Returns string of ``user.id`` or ``ctx.author.id`` """
 
         if user is not None and not isinstance(user, discord.Member):
             user = await commands.MemberConverter().convert(ctx, user)
@@ -185,14 +188,16 @@ class Pfgun(commands.Cog):
         return str(user.id)
 
     @commands.group(brief="Phantom Forces damage range calculator.", invoke_without_command=True)
-    async def pfgun(self,
-                    ctx: commands.Context,
-                    close_damage: str,
-                    long_damage: str,
-                    close_range: float,
-                    long_range: float,
-                    multiplier: float,
-                    rpm: float = None):
+    async def pfgun(
+            self,
+            ctx: commands.Context,
+            close_damage: str,
+            long_damage: str,
+            close_range: float,
+            long_range: float,
+            multiplier: float,
+            rpm: float = None
+    ):
         """ Main command """
 
         embed = PfGunEmbed(ctx).gen_embed(*ctx.args[2:])
