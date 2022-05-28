@@ -6,6 +6,7 @@ import pytube.exceptions
 
 import io
 import traceback
+import sys
 
 
 class FileTooBig(commands.CommandError):
@@ -33,7 +34,7 @@ class Convert(commands.Cog):
         return buffer, audio_stream.title
 
     @commands.command()
-    @commands.cooldown(1, 10, commands.BucketType.user)
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     async def mp3(self, ctx: commands.Context, *, url):
         async with ctx.typing():
             # Gets buffer in separate thread to avoid blocking
@@ -42,7 +43,7 @@ class Convert(commands.Cog):
             buffer.close()
 
     @mp3.error
-    async def on_error(self, ctx: commands.Context, error):
+    async def on_error(self, ctx: commands.Context, error: Exception):
         error = getattr(error, 'original', error)
 
         # File too big
@@ -55,18 +56,18 @@ class Convert(commands.Cog):
 
         # Pytube base error
         elif isinstance(error, pytube.exceptions.PytubeError):
-            traceback.print_tb(error.__traceback__)
+            traceback.print_tb(error.__traceback__, file=sys.stderr)
             await ctx.reply(f"Cannot download the video.")
 
         # This shouldn't happen
         elif isinstance(error, discord.HTTPException):
-            traceback.print_tb(error.__traceback__)
+            traceback.print_tb(error.__traceback__, file=sys.stderr)
             await ctx.reply("HTTP Error.")
 
         # General error
         else:
             await ctx.reply(f"Something went wrong.\n" + repr(error))
-            traceback.print_exc()
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
 async def setup(client):
