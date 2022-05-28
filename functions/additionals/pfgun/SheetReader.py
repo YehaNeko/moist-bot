@@ -1,5 +1,4 @@
 import json
-import asyncio
 from discord.ext import commands
 
 with open(r"./functions/SheetToJson/output_advinfosheet.json", "r") as f:
