@@ -18,9 +18,9 @@ class Health(commands.Cog):
         self.bot = bot
         self.process = psutil.Process()
 
-    @commands.command(hidden=True, aliases=["health"])
+    @commands.command(hidden=True, name="health", aliases=["stats"])
     @commands.is_owner()
-    async def bothealth(self, ctx):
+    async def bot_health(self, ctx):
         """Various bot health monitoring tools."""
 
         # This uses a lot of private methods because there is no
