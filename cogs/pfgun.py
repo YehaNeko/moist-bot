@@ -332,6 +332,43 @@ class Pfgun(commands.Cog):
         # Cache
         cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
+    @commands.command(name="ranges", brief="Info about damage")
+    async def gun_ranges(self, ctx):
+        """ Small command for showing damage needed for every shot to kill """
+
+        """ Create embed """
+        embed = discord.Embed(title="Damage ranges", url="https://youtu.be/dQw4w9WgXcQ", color=0x00ff40)
+        embed.set_author(
+            name="Requested by " + ctx.author.display_name,
+            icon_url=ctx.author.avatar.url,
+        )
+        embed.set_footer(text="Values rounded to 2nd decimal place")
+
+        """ Command logic """
+        for s in range(1, len(shots_to_damage) + 1):
+
+            next_value = shots_to_damage.get(s)
+
+            if s == 1:
+                embed.add_field(
+                    name=f"{s} shot",
+                    value=f"**∞** to {next_value} damage",
+                    inline=False,
+                )
+                continue
+
+            current_value = float(shots_to_damage.get(s - 1))
+            embed.add_field(
+                name=f"{s} shot",
+                value=f"{round(current_value - 0.01, 2)} to {next_value} damage",
+                inline=False,
+            )
+
+            if len(shots_to_damage) - 1 == s:
+                break
+
+        await ctx.reply(embed=embed)
+
 
 async def setup(client):
     await client.add_cog(Pfgun(client))
