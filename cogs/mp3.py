@@ -15,7 +15,7 @@ class FileTooBig(commands.CommandError):
     pass
 
 
-class Convert(commands.Cog):
+class Mp3(commands.Cog):
     def __init__(self, client: discord.Client):
         self.client = client
         self.execute = self.client.loop.run_in_executor
@@ -69,4 +69,4 @@ class Convert(commands.Cog):
 
 
 async def setup(client):
-    await client.add_cog(Convert(client))
+    await client.add_cog(Mp3(client))
