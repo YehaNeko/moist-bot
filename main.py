@@ -1,9 +1,11 @@
 import discord
+# from discord import app_commands
 from discord.ext import commands
-from config import TOKEN
+from config import TOKEN, GUILD
 
-import logging
 import traceback
+import asyncio
+import logging
 import sys
 import os
 
@@ -20,7 +22,6 @@ class MoistBot(commands.Bot):
         intents = discord.Intents(
             emojis_and_stickers=True,
             guilds=True,
-            # guild_scheduled_events=True,
             invites=True,
             members=True,
             message_content=True,
@@ -28,7 +29,6 @@ class MoistBot(commands.Bot):
             reactions=True,
             typing=True,
             webhooks=True,
-            # value=True,
             bans=False,
             presences=False,
             dm_typing=False,
@@ -42,42 +42,111 @@ class MoistBot(commands.Bot):
             allowed_mentions=allowed_mentions,
             intents=intents
         )
+        self.synced: bool = False
+        self.presence_changed: bool = False
 
-    async def setup_hook(self):
+    async def load_cogs(self) -> None:
         for filename in os.listdir(r"./cogs"):
             if filename.endswith(".py"):
                 try:
                     await self.load_extension(f"cogs.{filename[:-3]}")
-                except Exception as e:
+                except commands.ExtensionError as e:
                     print(f'Failed to load extension {filename}.', file=sys.stderr)
                     traceback.print_exc()
+
+    async def setup_hook(self):
+        await asyncio.create_task(self.load_cogs())
 
 
 client = MoistBot()
 
 
-@client.command()
-async def reload(ctx, ext="cmds"):
-    if ctx.author.id == 150560836971266048:
-
+@client.command(hidden=True)
+async def reload(ctx: commands.Context, ext: str = "cmds"):
+    if await client.is_owner(ctx.author):
         await client.reload_extension(f"cogs.{ext}")
-        await ctx.reply(f"Reloaded {ext}.")
-
-    else:
-        await ctx.reply("You don't have permission to use this.")
+        await ctx.reply(f":repeat: Reloaded {ext}.")
 @reload.error
-async def on_error(ctx, error):
+async def on_error(ctx, error: commands.CommandError):
     if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(f"Idiot, that's not a cog.")
-
+        await ctx.reply(":anger: Idiot, that's not a cog.")
     else:
-        await ctx.reply(f"Raised {type(error)}:\n"
+        await ctx.reply(f":anger: Reloading raised an exception: `{type(error.__class__)}`\n"
                         f'"{error}"')
+
+
+@client.command(hidden=True)
+async def load(ctx: commands.Context, ext: str):
+    if await client.is_owner(ctx.author):
+        await client.load_extension(f"cogs.{ext}")
+        await ctx.reply(f":white_check_mark: Loaded {ext}.")
+@load.error
+async def on_error(ctx, error: commands.CommandError):
+    if isinstance(getattr(error, "original", error), (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound)):
+        await ctx.reply(f":anger: Unable to load cog.")
+    else:
+        await ctx.reply(f":anger: Loading raised an exception: `{type(error.__class__)}`\n"
+                        f'"{error}"')
+
+
+@client.command(hidden=True)
+async def unload(ctx: commands.Context, ext: str):
+    if await client.is_owner(ctx.author):
+        await client.unload_extension(f"cogs.{ext}")
+        await ctx.reply(f":white_check_mark: Unloaded {ext}.")
+@unload.error
+async def on_error(ctx, error: commands.CommandError):
+    if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
+        await ctx.reply(":anger: Unable to find cog.")
+
+
+@client.group(hiddden=True)
+async def debug(ctx):
+    pass
+
+
+@debug.command(name="unloadappcmd", hidden=True)
+async def unload_app_cmd(ctx: commands.Context, cmd: str, resync: bool = False):
+    if await client.is_owner(ctx.author):
+        unloaded = client.tree.remove_command(cmd, guild=discord.Object(id=GUILD))
+
+        if bool(resync):
+            await client.tree.sync(guild=discord.Object(id=GUILD))
+            await ctx.reply(f":white_check_mark: Unloaded and re-synced `{unloaded}`.")
+        else:
+            await ctx.reply(f":white_check_mark: Unloaded `{unloaded}`.\n"
+                            ":warning: Re-sync is required.")
+
+@unload_app_cmd.error
+async def on_error(ctx, error: commands.CommandError):
+    await ctx.reply(":anger: Unable to unload.")
+
+
+@debug.command(name="syncappcmds", hidden=True)
+async def sync_app_cmds(ctx: commands.Context):
+    if await client.is_owner(ctx.author):
+        synced = await client.tree.sync(guild=discord.Object(id=GUILD))
+        await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join([repr(sync) for sync in synced]))
+@unload_app_cmd.error
+async def on_error(ctx, error: commands.CommandError):
+    await ctx.reply(":anger: Unable to sync application commands.")
 
 
 @commands.Bot.listen(client)
 async def on_ready():
-    await client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
-    print(f"Logged in as {client.user}\n")
+    if not client.presence_changed:
+        await client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
+        print(f"\nLogged in as {client.user}\n"
+              "-------------\n")
+        client.presence_changed = True
+    else:
+        print("\nRelogged in after disconnect!\n"
+              "-------------\n")
+
+    await client.wait_until_ready()
+    if not client.synced:
+        await client.tree.sync(guild=discord.Object(id=GUILD))
+        client.synced = True
+
 
 client.run(TOKEN)
