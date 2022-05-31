@@ -62,10 +62,10 @@ client = MoistBot()
 
 
 @client.command(hidden=True)
+@commands.is_owner()
 async def reload(ctx: commands.Context, ext: str = "cmds"):
-    if await client.is_owner(ctx.author):
-        await client.reload_extension(f"cogs.{ext}")
-        await ctx.reply(f":repeat: Reloaded {ext}.")
+    await client.reload_extension(f"cogs.{ext}")
+    await ctx.reply(f":repeat: Reloaded {ext}.")
 @reload.error
 async def on_error(ctx, error: commands.CommandError):
     if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
@@ -76,10 +76,10 @@ async def on_error(ctx, error: commands.CommandError):
 
 
 @client.command(hidden=True)
+@commands.is_owner()
 async def load(ctx: commands.Context, ext: str):
-    if await client.is_owner(ctx.author):
-        await client.load_extension(f"cogs.{ext}")
-        await ctx.reply(f":white_check_mark: Loaded {ext}.")
+    await client.load_extension(f"cogs.{ext}")
+    await ctx.reply(f":white_check_mark: Loaded {ext}.")
 @load.error
 async def on_error(ctx, error: commands.CommandError):
     if isinstance(getattr(error, "original", error), (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound)):
@@ -90,10 +90,10 @@ async def on_error(ctx, error: commands.CommandError):
 
 
 @client.command(hidden=True)
+@commands.is_owner()
 async def unload(ctx: commands.Context, ext: str):
-    if await client.is_owner(ctx.author):
-        await client.unload_extension(f"cogs.{ext}")
-        await ctx.reply(f":white_check_mark: Unloaded {ext}.")
+    await client.unload_extension(f"cogs.{ext}")
+    await ctx.reply(f":white_check_mark: Unloaded {ext}.")
 @unload.error
 async def on_error(ctx, error: commands.CommandError):
     if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
@@ -101,32 +101,33 @@ async def on_error(ctx, error: commands.CommandError):
 
 
 @client.group(hiddden=True)
+@commands.is_owner()
 async def debug(ctx):
     pass
 
 
 @debug.command(name="unloadappcmd", hidden=True)
+@commands.is_owner()
 async def unload_app_cmd(ctx: commands.Context, cmd: str, resync: bool = False):
-    if await client.is_owner(ctx.author):
-        unloaded = client.tree.remove_command(cmd, guild=discord.Object(id=GUILD))
+    unloaded = client.tree.remove_command(cmd, guild=discord.Object(id=GUILD))
 
-        if bool(resync):
-            await client.tree.sync(guild=discord.Object(id=GUILD))
-            await ctx.reply(f":white_check_mark: Unloaded and re-synced `{unloaded}`.")
-        else:
-            await ctx.reply(f":white_check_mark: Unloaded `{unloaded}`.\n"
-                            ":warning: Re-sync is required.")
+    if bool(resync):
+        await client.tree.sync(guild=discord.Object(id=GUILD))
+        await ctx.reply(f":white_check_mark: Unloaded and re-synced `{unloaded}`.")
+    else:
+        await ctx.reply(f":white_check_mark: Unloaded `{unloaded}`.\n"
+                        ":warning: Re-sync is required.")
 
 @unload_app_cmd.error
-async def on_error(ctx, error: commands.CommandError):
+async def on_error(ctx, _):
     await ctx.reply(":anger: Unable to unload.")
 
 
 @debug.command(name="syncappcmds", hidden=True)
+@commands.is_owner()
 async def sync_app_cmds(ctx: commands.Context):
-    if await client.is_owner(ctx.author):
-        synced = await client.tree.sync(guild=discord.Object(id=GUILD))
-        await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join([repr(sync) for sync in synced]))
+    synced = await client.tree.sync(guild=discord.Object(id=GUILD))
+    await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join([repr(sync) for sync in synced]))
 @unload_app_cmd.error
 async def on_error(ctx, error: commands.CommandError):
     await ctx.reply(":anger: Unable to sync application commands.")
