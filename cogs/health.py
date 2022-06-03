@@ -23,12 +23,12 @@ class Health(commands.Cog):
     async def bothealth(self, ctx):
         """Various bot health monitoring tools."""
 
-        # This uses a lot of private methods because there is no
-        # clean way of doing this otherwise.
+        # I forgor💀 from where but I yoinked this somewhere from
+        # github.com/Rapptz/RoboDanny/tree/rewrite/cogs
 
         HEALTHY = discord.Colour(value=0x43B581)
         UNHEALTHY = discord.Colour(value=0xF04947)
-        WARNING = discord.Colour(value=0xF09E47)
+        # WARNING = discord.Colour(value=0xF09E47)
 
         embed = discord.Embed(title='Bot Health Report', colour=HEALTHY, timestamp=datetime.utcnow())
         description = []
