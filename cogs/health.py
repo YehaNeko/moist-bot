@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import discord
 from discord.ext import commands
 
@@ -9,18 +11,16 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from main import MoistBot
-else:
-    MoistBot = discord.Client
 
 
 class Health(commands.Cog):
     def __init__(self, bot: MoistBot):
-        self.bot = bot
+        self.bot: MoistBot = bot
         self.process = psutil.Process()
 
     @commands.command(hidden=True, name="health", aliases=["stats"])
     @commands.is_owner()
-    async def bothealth(self, ctx):
+    async def bothealth(self, ctx: commands.Context):
         """Various bot health monitoring tools."""
 
         # I forgor💀 from where but I yoinked this somewhere from
