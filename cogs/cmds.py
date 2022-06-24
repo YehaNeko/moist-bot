@@ -1,7 +1,9 @@
-import typing
-import time
 import discord
 from discord.ext import commands
+from discord.utils import escape_mentions
+
+import time
+from typing import Union
 
 
 class Cmds(commands.Cog):
@@ -9,29 +11,33 @@ class Cmds(commands.Cog):
         self.client = client
 
     @commands.command()
-    async def ping(self, ctx, *, args: str = "Pong!"):
+    async def ping(self, ctx, *, msg: Union[escape_mentions, str] = "Pong!"):
         before = time.monotonic()
-        message = await ctx.reply(f"{args}")
+        message = await ctx.reply(f"{msg}")
         ping = (time.monotonic() - before) * 1000
-        await message.edit(content=f"{args} in {int(ping)}ms")
+        await message.edit(content=f"{msg} in {int(ping)}ms")
 
     """
     @commands.command()
-    async def ping(self, ctx, *, args: str = "Pong!"):
-        await ctx.reply(f"{args} in {round(self.client.latency) * 1000}ms")
+    async def ping(self, ctx, *, msg: str = "Pong!"):
+        await ctx.reply(f"{msg} in {round(self.client.latency) * 1000}ms")
     """
 
     @commands.command(name="stutter")
-    async def stutter_filter(self, ctx, *, msg):
+    async def stutter_filter(self, ctx, *, msg: Union[escape_mentions, str]):
         await ctx.reply(stutter_message_filter(msg))
 
     @commands.command()
-    async def quote(self, ctx, at_who: typing.Union[discord.Member, str], *, msg):
-        at_who = at_who.replace("-", " ") if isinstance(at_who, str) else at_who.mention
+    async def quote(self, ctx, at_who: Union[discord.Member, str], *, msg: Union[escape_mentions, str]):
+        if isinstance(at_who, discord.User):
+            at_who = at_who.mention
+        else:
+            at_who = escape_mentions(at_who)
+
         await ctx.reply(f"{msg}\n\n" f" - **{at_who}**")
 
     @commands.command()
-    async def say(self, ctx, *, msg):
+    async def say(self, ctx, *, msg: Union[escape_mentions, str]):
         await ctx.send(msg)
 
     @commands.command(name="methods", brief="Used for debugging", hidden=True)
@@ -73,14 +79,10 @@ async def setup(client):
 
 
 # Helper functions
-def stutter_message_filter(msg):
-    stuttered_list = []
+def stutter_message_filter(msg: str) -> str:
+    stuttered_msg = ""
 
-    for word in str(msg).split(" "):
-        stuttered_word = f"{word[0:1]}-{word[0:1]}-{word} "
-        stuttered_list.append(stuttered_word)
-    stuttered_msg = "".join(stuttered_list)
+    for word in msg.split(" "):
+        stuttered_msg += f"{word[0:1]}-{word[0:1]}-{word} "
 
-    return (
-        "Message over character limit." if len(stuttered_msg) > 2000 else stuttered_msg
-    )
+    return stuttered_msg if len(stuttered_msg) <= 2000 else ":warning: Message over character limit."
