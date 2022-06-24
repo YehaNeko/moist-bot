@@ -1,10 +1,11 @@
-import sys
-import traceback
 import discord
+import logging
 from discord.ext import commands
 
 # Custom errors
 from cogs.mcserver import NotWhitelisted
+
+logger = logging.getLogger('discord.' + __name__)
 
 
 class ErrorHandler(commands.Cog):
@@ -36,34 +37,33 @@ class ErrorHandler(commands.Cog):
             return
 
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.reply(f"You are on cooldown. Try again in {(seconds := round(error.retry_after))} seconds.",
+            await ctx.reply(f":warning: You are on cooldown. Try again in {(seconds := round(error.retry_after))} seconds.",
                             delete_after=seconds + 1)
 
         elif isinstance(error, commands.DisabledCommand):
-            await ctx.reply(f'{ctx.command} has been disabled.')
+            await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.')
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
-                await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+                await ctx.author.send(f":no_entry_sign: `{ctx.command}` can't be used in Private Messages.")
             except discord.HTTPException:
                 pass
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.reply(f"Missing required parameter `{error.param.name}`.")
+            await ctx.reply(f":warning: Missing required parameter `{error.param.name}`.")
 
         elif isinstance(error, commands.MemberNotFound):
-            await ctx.reply(f"Member `{error.argument}` not found.")
+            await ctx.reply(f":warning: Member `{error.argument}` not found.")
 
         elif isinstance(error, commands.BadArgument):
-            await ctx.reply(f"Bad parameter in `{ctx.current_parameter}`.")
+            await ctx.reply(f":warning: Bad parameter in `{ctx.current_parameter}`.")
 
         else:
             # All other Errors not returned come here. And we can just print the default TraceBack.
-            print(
-                f'Error in guild "{ctx.guild}", triggered by {ctx.author}, with command "{ctx.command}"',
-                file=sys.stderr)
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            print("-----------\n\n")
+            logger.exception(
+                f'Error in guild "{ctx.guild}", triggered by {ctx.author}, with command "{ctx.command}"\n',
+                exc_info=error
+            )
             await ctx.reply(f":anger: Command raised unhandled error:\n"
                             f"`{error}`")
 
