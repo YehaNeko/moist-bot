@@ -1,19 +1,14 @@
 import discord
-# from discord import app_commands
 from discord.ext import commands
-from config import TOKEN, GUILD
+from config import TOKEN, GUILD_OBJECT
 
-import traceback
+from typing import Optional, Literal
+
 import asyncio
 import logging
-import sys
 import os
 
-logger = logging.getLogger('discord')
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-logger.addHandler(handler)
+logger = logging.getLogger('discord.' + __name__)
 
 
 class MoistBot(commands.Bot):
@@ -51,8 +46,7 @@ class MoistBot(commands.Bot):
                 try:
                     await self.load_extension(f"cogs.{filename[:-3]}")
                 except commands.ExtensionError as e:
-                    print(f'Failed to load extension {filename}.', file=sys.stderr)
-                    traceback.print_exc()
+                    logger.exception(f'Failed to load extension {filename}.', exc_info=e)
 
     async def setup_hook(self):
         await asyncio.create_task(self.load_cogs())
@@ -102,52 +96,79 @@ async def on_error(ctx, error: commands.CommandError):
 
 @client.group(hiddden=True)
 @commands.is_owner()
-async def debug(ctx):
+async def debug(_ctx):
     pass
 
 
 @debug.command(name="unloadappcmd", hidden=True)
 @commands.is_owner()
 async def unload_app_cmd(ctx: commands.Context, cmd: str, resync: bool = False):
-    unloaded = client.tree.remove_command(cmd, guild=discord.Object(id=GUILD))
+    unloaded = client.tree.remove_command(cmd, guild=GUILD_OBJECT)
 
     if bool(resync):
-        await client.tree.sync(guild=discord.Object(id=GUILD))
+        await client.tree.sync(guild=GUILD_OBJECT)
         await ctx.reply(f":white_check_mark: Unloaded and re-synced `{unloaded}`.")
     else:
         await ctx.reply(f":white_check_mark: Unloaded `{unloaded}`.\n"
                         ":warning: Re-sync is required.")
 
 @unload_app_cmd.error
-async def on_error(ctx, _):
+async def on_error(ctx: commands.Context, _):
     await ctx.reply(":anger: Unable to unload.")
 
 
 @debug.command(name="syncappcmds", hidden=True)
 @commands.is_owner()
 async def sync_app_cmds(ctx: commands.Context):
-    synced = await client.tree.sync(guild=discord.Object(id=GUILD))
-    await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join([repr(sync) for sync in synced]))
+    synced = await client.tree.sync(guild=GUILD_OBJECT)
+    await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join(repr(sync) for sync in synced))
 @unload_app_cmd.error
-async def on_error(ctx, error: commands.CommandError):
+async def on_error(ctx, _error: commands.CommandError):
     await ctx.reply(":anger: Unable to sync application commands.")
+
+
+@debug.command(name="getcmds", hidden=True)
+@commands.is_owner()
+async def get_cmds(ctx: commands.Context, guild: Optional[Literal["guild", "global"]] = "guild"):
+    if guild == "global":
+        _guild = None
+        guild = "global guilds"
+    elif guild == "guild":
+        _guild = GUILD_OBJECT
+        guild = "current guild"
+    else:
+        raise commands.BadArgument()
+
+    cmds = await client.tree.fetch_commands(guild=_guild)
+    await ctx.reply(f":white_check_mark: Fetched {len(cmds)} command(s) in **{guild}**:\n " +
+                    ("`%s`" % "\n".join(repr(cmd) for cmd in cmds) if cmds else ""))
 
 
 @commands.Bot.listen(client)
 async def on_ready():
+    change_activity = client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
+
     if not client.presence_changed:
-        await client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
-        print(f"\nLogged in as {client.user}\n"
-              "-------------\n")
+        await change_activity
         client.presence_changed = True
+        logger.info(f"\nLogged in as {client.user}\n"
+                    "-------------\n")
     else:
-        print("\nRelogged in after disconnect!\n"
-              "-------------\n")
+        await change_activity
+        logger.info("\nRelogged in after disconnect!\n"
+                    "-------------\n")
 
     await client.wait_until_ready()
     if not client.synced:
-        await client.tree.sync(guild=discord.Object(id=GUILD))
+        await client.tree.sync(guild=GUILD_OBJECT)
         client.synced = True
 
+
+file_logger = logging.getLogger('discord')
+file_logger.setLevel(logging.DEBUG)
+file_handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+dt_fmt = '%Y-%m-%d %H:%M:%S'
+file_handler.setFormatter(logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{'))
+file_logger.addHandler(file_handler)
 
 client.run(TOKEN)
