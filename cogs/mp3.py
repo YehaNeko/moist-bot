@@ -7,8 +7,9 @@ import pytube.exceptions
 from typing import Tuple
 
 import io
-import traceback
-import sys
+import logging
+
+logger = logging.getLogger('discord.' + __name__)
 
 
 class FileTooBig(commands.CommandError):
@@ -59,12 +60,12 @@ class Mp3(commands.Cog):
 
         # Pytube base error
         elif isinstance(error, pytube.exceptions.PytubeError):
-            traceback.print_tb(error.__traceback__, file=sys.stderr)
+            logging.exception(type(error), exc_info=error)
             await ctx.reply(f"Cannot download the video.")
 
         # This shouldn't happen
         elif isinstance(error, discord.HTTPException):
-            traceback.print_tb(error.__traceback__, file=sys.stderr)
+            logging.exception(type(error), exc_info=error)
             await ctx.reply("HTTP Error.")
 
 
