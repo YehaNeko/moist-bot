@@ -4,8 +4,6 @@ from discord.ext import commands
 from pytube import YouTube
 import pytube.exceptions
 
-from typing import Tuple
-
 import io
 import logging
 
@@ -22,7 +20,7 @@ class Mp3(commands.Cog):
         self.execute = self.client.loop.run_in_executor
 
     @staticmethod
-    def _get_buffer(url) -> Tuple[io.BytesIO, str]:
+    def _get_buffer(url) -> tuple[io.BytesIO, str]:
         # Get audio stream
         audio_stream = YouTube(url).streams.get_audio_only()
 
@@ -38,7 +36,7 @@ class Mp3(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
-    async def mp3(self, ctx: commands.Context, *, url):
+    async def mp3(self, ctx: commands.Context, *, url: str):
         """Youtube mp3 downloader"""
 
         async with ctx.typing():
