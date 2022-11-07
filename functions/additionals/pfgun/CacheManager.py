@@ -8,10 +8,10 @@ executor = ThreadPoolExecutor(max_workers=1)
 
 def cache_arg(args: list):
     """ Adds caching operations to queue """
-    executor.submit(save_cache, *args)
+    executor.submit(_save_cache, *args)
 
 
-def save_cache(ctx, d1, d2, r1, r2, multiplier, rpm):
+def _save_cache(ctx, d1, d2, r1, r2, multiplier, rpm):
     """ Save to cache """
 
     with open("pfgun_cache.json", "r") as f:

@@ -112,9 +112,9 @@ class Ukraine(commands.Cog):
         self.client: MoistBot = client
         self.execute = self.client.loop.run_in_executor
 
-    # Method called by discord.py
-    async def cog_command_error(self, ctx: commands.Context, error):
-        pass
+    # # Method called by discord.py
+    # async def cog_command_error(self, ctx: commands.Context, error):
+    #     pass
 
     @staticmethod
     def _get_buffer(avatar) -> io.BytesIO:

@@ -46,7 +46,7 @@ class MoistBot(commands.Bot):
                 try:
                     await self.load_extension(f"cogs.{filename[:-3]}")
                 except commands.ExtensionError as e:
-                    logger.exception(f'Failed to load extension {filename}.', exc_info=e)
+                    logger.exception(f'Failed to load extension {filename}\n')
 
     async def setup_hook(self):
         await asyncio.create_task(self.load_cogs())
@@ -79,7 +79,8 @@ async def on_error(ctx, error: commands.CommandError):
     if isinstance(getattr(error, "original", error), (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound)):
         await ctx.reply(f":anger: Unable to load cog.")
     else:
-        await ctx.reply(f":anger: Loading raised an exception: `{type(error.__class__)}`\n"
+        logger.exception("Loading raised an exception", exc_info=error.__traceback__)
+        await ctx.reply(f":anger: Loading cog raised an exception: `{type(error.__class__)}`\n"
                         f'"{error}"')
 
 
@@ -105,7 +106,7 @@ async def debug(_ctx):
 async def unload_app_cmd(ctx: commands.Context, cmd: str, resync: bool = False):
     unloaded = client.tree.remove_command(cmd, guild=GUILD_OBJECT)
 
-    if bool(resync):
+    if resync:
         await client.tree.sync(guild=GUILD_OBJECT)
         await ctx.reply(f":white_check_mark: Unloaded and re-synced `{unloaded}`.")
     else:

@@ -10,7 +10,8 @@ class SheetConverter(commands.Cog):
     def __init__(self, client):
         self.client = client
 
-    @commands.command(name="loadsheet")
+    @commands.is_owner()
+    @commands.command(name="loadsheet", hidden=True)
     async def load_sheet(self, ctx, output: bool = False):
         if ctx.author.id == 150560836971266048:
 
