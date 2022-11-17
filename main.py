@@ -121,7 +121,7 @@ async def on_error(ctx: commands.Context, _):
 @debug.command(name="syncappcmds", hidden=True)
 @commands.is_owner()
 async def sync_app_cmds(ctx: commands.Context):
-    synced = await client.tree.sync(guild=GUILD_OBJECT)
+    synced = await client.tree.sync(guild=None)
     await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join(repr(sync) for sync in synced))
 @unload_app_cmd.error
 async def on_error(ctx, _error: commands.CommandError):
@@ -161,7 +161,7 @@ async def on_ready():
 
     await client.wait_until_ready()
     if not client.synced:
-        await client.tree.sync(guild=GUILD_OBJECT)
+        await client.tree.sync(guild=None)
         client.synced = True
 
 

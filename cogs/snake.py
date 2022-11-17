@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from typing import TYPE_CHECKING, Any, Optional
@@ -265,8 +266,10 @@ class SnakeGame(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
 
-    @commands.command()
-    async def snake(self, ctx: commands.Context, x: int = 10, y: int = 10):
+    @commands.hybrid_command()
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
+    @app_commands.describe(x="Game size along the *x* axis", y="Game size along the *y* axis")
+    async def snake(self, ctx: commands.Context, x: Optional[int] = 10, y: Optional[int] = 10):
         """Play a snake game on discord!"""
 
         # Anti stefan mehanizam

@@ -125,7 +125,7 @@ class Ukraine(commands.Cog):
         return buffer
 
     @commands.hybrid_command()
-    @app_commands.guilds(GUILD_OBJECT)
+    @commands.cooldown(rate=1, per=2, type=commands.BucketType.user)
     @app_commands.describe(user="Optionally select a user")
     async def ukraine(self, ctx: commands.Context, *, user: discord.User = commands.Author):
         """Generates a Ukrainian colored ring border around someone's avatar"""
@@ -136,7 +136,7 @@ class Ukraine(commands.Cog):
                 avatar: bytes = await user.display_avatar.with_format("png").with_size(2048).read()
                 avatar: Image.Image = Image.open(io.BytesIO(avatar))
 
-                # Avoid blocking
+                # Avoid blocking TODO: should probably use some form of multiprocessing instead
                 img_buffer = await self.execute(None, self._get_buffer, avatar)
 
                 # Send image

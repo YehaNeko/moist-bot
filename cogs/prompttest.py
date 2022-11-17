@@ -1,7 +1,8 @@
 import discord
 from discord.ext import commands
-from discord import ui, app_commands
-from config import GUILD
+from discord import app_commands
+
+from typing import Optional
 
 
 def check_if_it_is_me(interaction: discord.Interaction) -> bool:
@@ -11,15 +12,13 @@ def check_if_it_is_me(interaction: discord.Interaction) -> bool:
 class PromptTest(commands.Cog):
     def __init__(self, client):
         self.client: commands.Bot = client
-        self.client.tree.add_command(self.prompt_test, guild=discord.Object(id=GUILD))
+        self.client.tree.add_command(self.prompt_hello, guild=None, override=True)
 
-    @app_commands.command(name="prompt", description="Testing application command.")
-    @app_commands.describe(test_var="A variable used to test inputs.")
-    @app_commands.rename(test_var="test-variable")
-    @app_commands.check(check_if_it_is_me)
-    async def prompt_test(self, interaction: discord.Interaction, test_var: str = "placeholder"):
-        await interaction.response.send_message("This is a test\n" + test_var,
-                                                ephemeral=True)
+    @app_commands.command(name="hello", description="Testing application command.")
+    @app_commands.describe(who="Select someone to greet")
+    @app_commands.rename(who="who-to-greet")
+    async def prompt_hello(self, interaction: discord.Interaction, who: Optional[discord.User] = None):
+        await interaction.response.send_message(f"Hello **{who.display_name}**!")
 
 
 async def setup(client):
@@ -27,4 +26,4 @@ async def setup(client):
 
 
 async def teardown(client: commands.Bot):
-    client.tree.remove_command("prompt")
+    client.tree.remove_command("hello")
