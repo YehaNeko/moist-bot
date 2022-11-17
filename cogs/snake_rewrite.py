@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-import discord
-from discord.ext import commands
-
 from typing import TYPE_CHECKING, Any, Optional
 from contextlib import contextmanager
 from random import randint
 from copy import deepcopy
 import numpy as np
-import time
 import logging
+import time
+
+# This check is needed for when running the file standalone
+if __name__ != "__main__":
+    import discord
+    from discord import app_commands
+    from discord.ext import commands
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -32,9 +35,9 @@ class SnakeGameContainer:
 
         # Initial game state
         self.field_size: tuple[int, int] = (size_x, size_y)
-        self.max_field_size: int = abs(self.field_size[0]) * abs(self.field_size[1])
+        self.max_field_size: int = abs(size_x) * abs(size_y)
 
-        self.empty_field = np.empty(self.field_size, dtype="unicode_")
+        self.empty_field = np.empty(shape=self.field_size, dtype="unicode_")
 
         self.field = self.empty_field.copy()
         self.rendered_field: str | None = None
@@ -43,17 +46,16 @@ class SnakeGameContainer:
         self.snake_head: tuple[int, ...] = tuple(
             map(lambda x: round(x / 2), self.field_size)
         )
-        self.snake_body = np.empty(shape=(self.max_field_size, 2), dtype='int8')
+        self.snake_body = np.full((self.max_field_size, 2), -1, dtype='int8')
         self.snake_body[:3] = np.array([[self.snake_head[0] + o, self.snake_head[1]] for o in range(1, 3)], dtype='int8')
 
-        # self.snake_body = np.array([
-        #     [self.snake_head[0] + o, self.snake_head[1]] for o in range(1, 3)
-        # ])
         self.apple: tuple[int, ...] = (abs(self.snake_head[0] - 3), self.snake_head[1])
 
         # Game info
         self.game_score: int = 0
         self.alive: bool = True
+
+        self.snake_body_size: int = len(self.snake_body) + 1
 
     def _move_snake(self, x: int, y: int, has_eaten: bool = False) -> None:
         """Increment `self.snake_head` by `x` or `y`"""
@@ -64,10 +66,11 @@ class SnakeGameContainer:
         elif abs(x) > 1 or abs(y) > 1:
             raise ValueError("Cannot move more than 1 tile at once.")
 
-        self.snake_body.insert(0, self.snake_head)
+        np.roll(self.snake_body, 1, 0)
+        self.snake_body[0] = self.snake_head  # TODO: make array
 
         if not has_eaten:
-            self.snake_body.pop()
+            self.snake_body[self.snake_body_size] = [-1, -1]
 
         sx, sy = self.snake_head
         self.snake_head = (sx + x, sy + y)
@@ -77,13 +80,19 @@ class SnakeGameContainer:
 
         # If the snake is about to eat an apple
         has_eaten: bool = (
-            self.snake_head[0] + x == self.apple[0]
-            and self.snake_head[1] + y == self.apple[1]
+                self.snake_head[0] + x == self.apple[0]
+                and self.snake_head[1] + y == self.apple[1]
         )
         if has_eaten:
             self.game_score += 1
+            self.snake_body_size += 1
 
         self._move_snake(x, y, has_eaten)
+
+        # Win condition
+        if self.snake_body_size == self.max_field_size:
+            self.win_game()
+            return
 
         # Respawn apple
         while self.apple == self.snake_head or self.apple in self.snake_body:
@@ -94,12 +103,14 @@ class SnakeGameContainer:
 
         # Movement checks #
         sx, sy = self.snake_head
+
+        # Game over conditions
         if (
-            # If the snake hit its own body
-            self.snake_head in self.snake_body
-            # If the snake hit a wall
-            or sx+1 > self.field_size[0] or sy+1 > self.field_size[1]
-            or sx < 0 or sy < 0
+                # If the snake hit its own body
+                self.snake_head in self.snake_body
+                # If the snake hit a wall
+                or sx + 1 > self.field_size[0] or sy + 1 > self.field_size[1]
+                or sx < 0 or sy < 0
         ):
             self.game_over()
 
@@ -113,12 +124,12 @@ class SnakeGameContainer:
         finally:
             # We need to reset the field to its original form
             # for future render passes
-            # TODO: Do the thing u wanted to do so the thing does the do of the todo yes do the todo
-            self.field = deepcopy(self.empty_field)
+            self.field = self.empty_field.copy()
 
     def render(self) -> str:
         """Add game objects and invoke ``self._render``"""
 
+        # TODO: This is all wrong, and so is the protected func
         for obj in self.snake_body:
             self.field[obj[1]][obj[0]] = self.assets["snake_body"]
 
@@ -136,6 +147,11 @@ class SnakeGameContainer:
         """
         self.alive = False
 
+    def win_game(self):
+        """TODO: make event
+        """
+        self.game_over()
+
 
 labels = {
     "up": "Up",
@@ -148,12 +164,12 @@ labels = {
 
 class SnakeGameView(discord.ui.View):
     def __init__(
-        self,
-        *,
-        ctx: commands.Context,
-        game_instance: SnakeGameContainer,
-        timeout: Optional[float] = 15,
-        message: discord.Message = None,
+            self,
+            *,
+            ctx: commands.Context,
+            game_instance: SnakeGameContainer,
+            timeout: Optional[float] = 15,
+            message: discord.Message = None,
     ) -> None:
         super().__init__(timeout=timeout)
         self.ctx: commands.Context = ctx
@@ -161,7 +177,6 @@ class SnakeGameView(discord.ui.View):
         self.message: discord.Message | None = message
         self.opposite_button: discord.ui.Button | None = None
         self.last_opposite_button: discord.ui.Button | None = None
-        self._i_check: int = 0
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         self._i_check = time.perf_counter_ns()
@@ -195,12 +210,12 @@ class SnakeGameView(discord.ui.View):
                 self.opposite_button = item
 
     @discord.ui.button(label=labels["quit"], style=discord.ButtonStyle.red, row=0)
-    async def quit(self, _interaction: discord.Interaction, _button: discord.ui.Button):
+    async def quit(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.game_instance.alive = False
         await self._on_game_over("You quit!")
 
     @discord.ui.button(label=labels["up"], style=discord.ButtonStyle.primary, row=0)
-    async def up(self, interaction: discord.Interaction, _button: discord.ui.Button):
+    async def up(self, interaction: discord.Interaction, button: discord.ui.Button):
         self._set_opposite_button("down")
         await self.on_button_interaction(interaction, y=-1)
 
@@ -209,21 +224,21 @@ class SnakeGameView(discord.ui.View):
         pass
 
     @discord.ui.button(label=labels["left"], style=discord.ButtonStyle.primary, row=1)
-    async def left(self, interaction: discord.Interaction, _button: discord.ui.Button):
+    async def left(self, interaction: discord.Interaction, button: discord.ui.Button):
         self._set_opposite_button("right")
         await self.on_button_interaction(interaction, x=-1)
 
     @discord.ui.button(label=labels["down"], style=discord.ButtonStyle.primary, row=1)
-    async def down(self, interaction: discord.Interaction, _button: discord.ui.Button):
+    async def down(self, interaction: discord.Interaction, button: discord.ui.Button):
         self._set_opposite_button("up")
         await self.on_button_interaction(interaction, y=1)
 
     @discord.ui.button(label=labels["right"], style=discord.ButtonStyle.primary, row=1)
-    async def right(self, interaction: discord.Interaction, _button: discord.ui.Button):
+    async def right(self, interaction: discord.Interaction, button: discord.ui.Button):
         self._set_opposite_button("left")
         await self.on_button_interaction(interaction, x=1)
 
-    async def on_button_interaction(self, interaction: discord.Interaction,  **kwargs):
+    async def on_button_interaction(self, interaction: discord.Interaction, **kwargs):
         """Callback function of every movement button.
         This handles updating the game and disabling buttons.
         """
@@ -253,9 +268,16 @@ class SnakeGameRew(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
 
-    @commands.command()
-    async def snakerew(self, ctx: commands.Context, x: int = 10, y: int = 10):
+    @commands.hybrid_command()
+    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
+    @app_commands.describe(x="Game size along the *x* axis", y="Game size along the *y* axis")
+    async def snake(self, ctx: commands.Context, x: Optional[int] = 10, y: Optional[int] = 10):
         """Play a snake game on discord!"""
+
+        # Anti stefan mehanizam
+        area = x * y
+        if abs(area) > 199:
+            return await ctx.reply(":anger: Game size is too big!")
 
         game_instance = SnakeGameContainer(x, y)
         view = SnakeGameView(ctx=ctx, game_instance=game_instance)
