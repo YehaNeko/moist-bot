@@ -332,6 +332,13 @@ class Pfgun(commands.Cog):
         # Cache
         cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
+    @pfgun.command(hidden=True)
+    @commands.is_owner()
+    async def eval(self, ctx: commands.Context, *, code: str):
+        """Local eval command"""
+        return_val = eval(code)
+        await ctx.reply(":white_check_mark: Exec returned: `%s`" % return_val)
+
     @commands.command(name="ranges", brief="Info about damage")
     async def gun_ranges(self, ctx):
         """ Small command for showing damage needed for every shot to kill """

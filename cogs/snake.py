@@ -202,10 +202,11 @@ class SnakeGameView(discord.ui.View):
         )
         self.stop()
 
-    def _set_opposite_button(self, label: str):
+    def _set_opposite_button(self, label: str) -> discord.ui.Button:
         for item in self.children:
             if isinstance(item, discord.ui.Button) and item.label == labels[label]:
                 self.opposite_button = item
+                return item
 
     @discord.ui.button(label=labels["quit"], style=discord.ButtonStyle.red, row=0)
     async def quit(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -272,7 +273,7 @@ class SnakeGame(commands.Cog):
     async def snake(self, ctx: commands.Context, x: Optional[int] = 10, y: Optional[int] = 10):
         """Play a snake game on discord!"""
 
-        # Anti stefan mehanizam
+        # Size check
         area = x * y
         if abs(area) > 199:
             return await ctx.reply(":anger: Game size is too big!")

@@ -145,6 +145,14 @@ async def get_cmds(ctx: commands.Context, guild: Optional[Literal["guild", "glob
                     ("`%s`" % "\n".join(repr(cmd) for cmd in cmds) if cmds else ""))
 
 
+@debug.command(hidden=True)
+@commands.is_owner()
+async def clear(ctx: commands.Context):
+    os.system("cls||clear")
+    await ctx.message.add_reaction('✅')
+    logger.info("Console cleared.")
+
+
 @commands.Bot.listen(client)
 async def on_ready():
     change_activity = client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
