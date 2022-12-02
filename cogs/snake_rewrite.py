@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 from contextlib import contextmanager
 from numpy.random import default_rng
+from functools import wraps
 import numpy as np
 import logging
 import time
@@ -32,6 +33,8 @@ class SnakeGameContainer:
 
     @staticmethod
     def perf_timer(begin_out: str = None, end_out: str = None):
+
+        @wraps
         def inner(func):
             def wrapper(*args, **kwargs):
                 self: SnakeGameContainer | self = args[0]
@@ -334,9 +337,9 @@ class SnakeGameView(discord.ui.View):
     |    | Render cycle took %sms
     |    +->Frame latency %sms, %s fps (in theory)
     |    
-    |    +>Await discord webhook api call
+    |    +>Await discord gateway api call
     |    |
-    |    +->Discord webhook response in %sms
+    |    +->Discord gateway response in %sms
     |
     Full interaction (including overheads) took %sms
 """,
