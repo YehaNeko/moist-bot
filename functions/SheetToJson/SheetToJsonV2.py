@@ -30,7 +30,7 @@ def sheet_to_json(
     soup = BeautifulSoup(f, "lxml")
 
     # We need to find dashed styles to determine
-    # when an entry is no longer an attachment of the last know weapon
+    # when an entry is no longer an attachment of the last known weapon
     styles_css = soup.find("style", type="text/css").text
     dashed_styles = {
             int(s_and_css[0].replace("s", ""))
@@ -67,8 +67,9 @@ def sheet_to_json(
         for page in pages
     ]
 
-    """ Sorting """
-
+    """ 
+    Sorting 
+    """
     keys = [page[0] for page in pages_contents]
 
     data = {}

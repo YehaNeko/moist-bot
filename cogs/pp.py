@@ -10,9 +10,9 @@ class Pp(commands.Cog):
         self.client = client
 
     @commands.command()
-    async def pp(self, ctx, *, user: str = None):
+    async def pp(self, ctx, *, user = None):
         """ Measure your pp. """
-        user = await commands.MemberConverter().convert(ctx, user) if user else ctx.author
+        user: discord.Member = await commands.MemberConverter().convert(ctx, user) if user else ctx.author
 
         embed = discord.Embed(
             color=discord.Color.magenta(),

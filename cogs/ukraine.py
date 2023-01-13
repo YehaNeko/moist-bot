@@ -96,14 +96,16 @@ class ImageGen:
     def subtractive(self) -> Image.Image:
         """Subtractive ring generator"""
 
-        img = Image.composite(self.avatar, self.flag_ua,
-                              mask=self._gen_mask(
-                                  start_size=(self.u_width, self.u_height),
-                                  x1y1=(self.u_ring_w, self.u_ring_h),
-                                  x2y2=(self.u_height - self.u_ring_w, self.u_height - self.u_ring_h),
-                                  final_size=self.avatar.size
-                                  )
-                              )
+        img = Image.composite(
+            self.avatar,
+            self.flag_ua,
+            mask=self._gen_mask(
+                start_size=(self.u_width, self.u_height),
+                x1y1=(self.u_ring_w, self.u_ring_h),
+                x2y2=(self.u_height - self.u_ring_w, self.u_height - self.u_ring_h),
+                final_size=self.avatar.size
+            )
+        )
         return img
 
 
@@ -154,4 +156,4 @@ async def setup(client):
 
 
 async def teardown(client):
-    client.tree.remove_command("ukraine")
+    client.tree.remove_command('ukraine')
