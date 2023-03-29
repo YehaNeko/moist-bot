@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional, Iterator
 from contextlib import contextmanager
 from numpy.random import default_rng
 from inspect import cleandoc
+from functools import wraps
 import numpy as np
 import logging
 import time
@@ -15,7 +16,7 @@ from discord.ext import commands
 if TYPE_CHECKING:
     from main import MoistBot
 
-logger = logging.getLogger("discord." + __name__)
+logger = logging.getLogger('discord.' + __name__)
 DO_PERF_TIMING: bool = True
 
 
@@ -40,6 +41,7 @@ class SnakeGameContainer(object):
     @staticmethod
     def perf_timer(begin_out: str = '', end_out: str = ''):
         def inner(func):
+            @wraps(func)
             def wrapper(*args, **kwargs):
                 self: SnakeGameContainer = args[0]
 
@@ -162,7 +164,7 @@ class SnakeGameContainer(object):
 
     @contextmanager
     def _render(self) -> Iterator[str]:
-        """Flatten the current field into a single string"""
+        """Flatten the current field array into a single string"""
 
         try:
             # TODO: use numpy funcs maybe idk
@@ -265,10 +267,14 @@ class SnakeGameView(discord.ui.View):
             logger.info("Interation \x1b[41;1mended\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m.",
                         self.ctx.author.name + '#' + self.ctx.author.discriminator, self.ctx.author.id)
 
-    def _set_opposite_button(self, label: str):
+    def _set_opposite_button(self, label: str) -> None:
+        """Finds and sets the `discord.ui.Button` object
+         that has the specified label from a str
+         """
         for item in self.children:
             if isinstance(item, discord.ui.Button) and item.label == labels[label]:
                 self.opposite_button = item
+                break
 
     @discord.ui.button(label=labels['quit'], style=discord.ButtonStyle.red, row=0)
     async def quit(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -303,7 +309,7 @@ class SnakeGameView(discord.ui.View):
         """Callback function of every movement button.
         This handles updating the game and disabling buttons.
         """
-        await self.ctx.bot.loop.create_task(interaction.response.defer())
+        await interaction.response.defer()
 
         # Disable opposite movement button so that
         # the snake can't move into itself
@@ -313,6 +319,7 @@ class SnakeGameView(discord.ui.View):
                 self.last_opposite_button.disabled = False
         self.last_opposite_button = self.opposite_button
 
+        # Move
         self.game_instance.move_snake(**kwargs)
 
         # Edit original message to the updated game state
@@ -376,9 +383,10 @@ class SnakeGameRew(commands.Cog):
         view.message = message = await ctx.send(game_instance.render(), view=view)
         active_snake_games.update({message.id: view})
 
+        # Cleanup
         await view.wait()  # Blocking
-        del game_instance, view
         active_snake_games.pop(message.id)
+        del game_instance, view
 
 async def setup(client: MoistBot):
     await client.add_cog(SnakeGameRew(client))
