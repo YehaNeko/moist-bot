@@ -365,11 +365,11 @@ class SnakeGame(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
 
-    @commands.hybrid_command(with_app_command=False)
+    @commands.hybrid_command()
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @app_commands.describe(
-        x="Game size along the *x* axis",
-        y="Game size along the *y* axis"
+        x="Game size along the X axis (default 10)",
+        y="Game size along the Y axis (default 10)"
     )
     async def snake(self, ctx: commands.Context, x: Optional[int] = 10, y: Optional[int] = 10):
         """Play a snake game on discord!"""
