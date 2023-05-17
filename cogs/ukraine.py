@@ -126,7 +126,8 @@ class Ukraine(commands.Cog):
         buffer.seek(0)
         return buffer
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(with_app_command=False, hidden=True)
+    @commands.is_owner()
     @commands.cooldown(rate=1, per=2, type=commands.BucketType.user)
     @app_commands.describe(user="Optionally select a user")
     async def ukraine(self, ctx: commands.Context, *, user: discord.User = commands.Author):

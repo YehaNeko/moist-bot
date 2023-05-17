@@ -18,7 +18,8 @@ class PromptTest(commands.Cog):
     async def prompt_hello(self, interaction: discord.Interaction, who: discord.User):
         await interaction.response.send_message(f"Hello **{who.display_name}**!")
 
-async def setup(client):
+async def setup(client: commands.Bot):
+    return
     await client.add_cog(PromptTest(client))
 
 

@@ -34,8 +34,9 @@ class Mp3(commands.Cog):
         buffer.seek(0)
         return buffer, audio_stream.title
 
-    @commands.command()
+    @commands.command(hidden=True)
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
+    @commands.is_owner()
     async def mp3(self, ctx: commands.Context, *, url: str):
         """Youtube mp3 downloader"""
 

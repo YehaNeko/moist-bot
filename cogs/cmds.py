@@ -11,6 +11,7 @@ class Cmds(commands.Cog):
         self.client = client
 
     @commands.command()
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     async def ping(self, ctx, *, msg: Union[escape_mentions, str] = "Pong!"):
         before = time.monotonic()
         message = await ctx.reply(f"{msg}")
@@ -27,7 +28,8 @@ class Cmds(commands.Cog):
     async def stutter_filter(self, ctx, *, msg: Union[escape_mentions, str]):
         await ctx.reply(stutter_message_filter(msg))
 
-    @commands.command()
+    @commands.is_owner()
+    @commands.command(hidden=True)
     async def quote(self, ctx, at_who: Union[discord.Member, str], *, msg: Union[escape_mentions, str]):
         if isinstance(at_who, discord.User):
             at_who = at_who.mention
@@ -40,6 +42,7 @@ class Cmds(commands.Cog):
     async def say(self, ctx, *, msg: Union[escape_mentions, str]):
         await ctx.send(msg)
 
+    @commands.is_owner()
     @commands.command(name="methods", brief="Used for debugging", hidden=True)
     async def get_methods(self, ctx, user: discord.Member):
         await ctx.reply(
@@ -53,6 +56,7 @@ class Cmds(commands.Cog):
             f"Avatar: {user.avatar}"
         )
 
+    @commands.is_owner()
     @commands.command(enabled=True, name="updatestatus", brief="Used for debugging", hidden=True)
     async def update_status(self, ctx):
 
