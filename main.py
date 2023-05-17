@@ -33,7 +33,7 @@ class MoistBot(commands.Bot):
         )
         super().__init__(
             case_insensitive=True,
-            command_prefix=commands.when_mentioned_or("water "),
+            command_prefix=commands.when_mentioned_or('water '),
             allowed_mentions=allowed_mentions,
             intents=intents
         )
@@ -41,10 +41,10 @@ class MoistBot(commands.Bot):
         self.presence_changed: bool = False
 
     async def load_cogs(self) -> None:
-        for filename in os.listdir(r"./cogs"):
-            if filename.endswith(".py"):
+        for filename in os.listdir(r'./cogs'):
+            if filename.endswith('.py'):
                 try:
-                    await self.load_extension(f"cogs.{filename[:-3]}")
+                    await self.load_extension(f'cogs.{filename[:-3]}')
                 except commands.ExtensionError as e:
                     logger.exception(f'Failed to load extension {filename}\n')
 
@@ -57,42 +57,42 @@ client = MoistBot()
 
 @client.command(hidden=True)
 @commands.is_owner()
-async def reload(ctx: commands.Context, ext: str = "cmds"):
-    await client.reload_extension(f"cogs.{ext}")
-    await ctx.reply(f":repeat: Reloaded {ext}.")
+async def reload(ctx: commands.Context, ext: str = 'cmds'):
+    await client.reload_extension(f'cogs.{ext}')
+    await ctx.reply(f':repeat: Reloaded {ext}.')
 @reload.error
 async def on_error(ctx, error: commands.CommandError):
-    if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(":anger: Idiot, that's not a cog.")
+    if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
+        await ctx.reply(":anger: Idiot, isn't a cog.")
     else:
-        await ctx.reply(f":anger: Reloading raised an exception: `{type(error.__class__)}`\n"
-                        f'"{error}"')
+        await ctx.reply(f':anger: Reloading raised an exception: `{type(error.__class__)}`\n'
+                        f"'{error}'")
 
 
 @client.command(hidden=True)
 @commands.is_owner()
 async def load(ctx: commands.Context, ext: str):
-    await client.load_extension(f"cogs.{ext}")
-    await ctx.reply(f":white_check_mark: Loaded {ext}.")
+    await client.load_extension(f'cogs.{ext}')
+    await ctx.reply(f':white_check_mark: Loaded {ext}.')
 @load.error
 async def on_error(ctx, error: commands.CommandError):
-    if isinstance(getattr(error, "original", error), (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(f":anger: Unable to load cog.")
+    if isinstance(getattr(error, 'original', error), (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound)):
+        await ctx.reply(f':anger: Unable to load cog.')
     else:
-        logger.exception("Loading raised an exception", exc_info=error.__traceback__)
-        await ctx.reply(f":anger: Loading cog raised an exception: `{type(error.__class__)}`\n"
-                        f'"{error}"')
+        logger.exception('Loading raised an exception', exc_info=error.__traceback__)
+        await ctx.reply(f':anger: Loading cog raised an exception: `{type(error.__class__)}`\n'
+                        f"'{error}'")
 
 
 @client.command(hidden=True)
 @commands.is_owner()
 async def unload(ctx: commands.Context, ext: str):
-    await client.unload_extension(f"cogs.{ext}")
-    await ctx.reply(f":white_check_mark: Unloaded {ext}.")
+    await client.unload_extension(f'cogs.{ext}')
+    await ctx.reply(f':white_check_mark: Unloaded {ext}.')
 @unload.error
 async def on_error(ctx, error: commands.CommandError):
-    if isinstance(getattr(error, "original", error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(":anger: Unable to find cog.")
+    if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
+        await ctx.reply(':anger: Unable to find cog.')
 
 
 @client.group(hiddden=True)
@@ -101,71 +101,93 @@ async def debug(_ctx):
     pass
 
 
-@debug.command(name="unloadappcmd", hidden=True)
+@debug.command(name='unloadappcmd', hidden=True)
 @commands.is_owner()
 async def unload_app_cmd(ctx: commands.Context, cmd: str, resync: bool = False):
     unloaded = client.tree.remove_command(cmd, guild=GUILD_OBJECT)
 
     if resync:
         await client.tree.sync(guild=GUILD_OBJECT)
-        await ctx.reply(f":white_check_mark: Unloaded and re-synced `{unloaded}`.")
+        await ctx.reply(f':white_check_mark: Unloaded and re-synced `{unloaded}`.')
     else:
-        await ctx.reply(f":white_check_mark: Unloaded `{unloaded}`.\n"
-                        ":warning: Re-sync is required.")
+        await ctx.reply(f':white_check_mark: Unloaded `{unloaded}`.\n'
+                        ':warning: Re-sync is required.')
 
 @unload_app_cmd.error
 async def on_error(ctx: commands.Context, _):
-    await ctx.reply(":anger: Unable to unload.")
+    await ctx.reply(':anger: Unable to unload.')
 
 
-@debug.command(name="syncappcmds", hidden=True)
+@debug.command(name='syncappcmds', hidden=True)
 @commands.is_owner()
-async def sync_app_cmds(ctx: commands.Context):
-    synced = await client.tree.sync(guild=None)
-    await ctx.reply(":white_check_mark: Synced:\n`%s`" % "\n".join(repr(sync) for sync in synced))
+async def sync_app_cmds(ctx: commands.Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
+    if guild == 'global':
+        _guild = None
+        guild = 'global guilds'
+    elif guild == 'guild':
+        _guild = GUILD_OBJECT
+        guild = 'current guild'
+    else:
+        raise commands.BadArgument()
+
+    synced = await client.tree.sync(guild=_guild)
+    await ctx.reply(f':white_check_mark: Synced in *{guild}*:\n`%s`' % '\n'.join(repr(sync) for sync in synced))
+
 @unload_app_cmd.error
 async def on_error(ctx, _error: commands.CommandError):
-    await ctx.reply(":anger: Unable to sync application commands.")
+    await ctx.reply(':anger: Unable to sync application commands.')
 
 
-@debug.command(name="getcmds", hidden=True)
+@debug.command(name='copyglobal', hidden=True)
 @commands.is_owner()
-async def get_cmds(ctx: commands.Context, guild: Optional[Literal["guild", "global"]] = "guild"):
-    if guild == "global":
+async def copy_global_to_test_guild(ctx: commands.Context, resync: bool = True):
+
+    client.tree.copy_global_to(guild=GUILD_OBJECT)
+    await ctx.reply(':white_check_mark: Copied global app commands to *test guild*')
+
+    if resync:
+        await client.tree.sync(guild=GUILD_OBJECT)
+        await ctx.invoke(sync_app_cmds, guild='guild')
+
+
+@debug.command(name='getappcmds', hidden=True)
+@commands.is_owner()
+async def get_app_cmds(ctx: commands.Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
+    if guild == 'global':
         _guild = None
-        guild = "global guilds"
-    elif guild == "guild":
+        guild = 'global guilds'
+    elif guild == 'guild':
         _guild = GUILD_OBJECT
-        guild = "current guild"
+        guild = 'current guild'
     else:
         raise commands.BadArgument()
 
     cmds = await client.tree.fetch_commands(guild=_guild)
-    await ctx.reply(f":white_check_mark: Fetched {len(cmds)} command(s) in **{guild}**:\n " +
-                    ("`%s`" % "\n".join(repr(cmd) for cmd in cmds) if cmds else ""))
+    await ctx.reply(f':white_check_mark: Fetched {len(cmds)} command(s) in **{guild}**:\n ' +
+                    ('`%s`' % '\n'.join(repr(cmd) for cmd in cmds) if cmds else ''))
 
 
 @debug.command(hidden=True)
 @commands.is_owner()
 async def clear(ctx: commands.Context):
-    os.system("cls||clear")
+    os.system('cls||clear')
     await ctx.message.add_reaction('✅')
-    logger.info("Console cleared.")
+    logger.info('Console cleared.')
 
 
 @commands.Bot.listen(client)
 async def on_ready():
-    change_activity = client.change_presence(activity=discord.Game(f"with {len(client.guilds)} mosturized servers"))
+    change_activity = client.change_presence(activity=discord.Game(f'with {len(client.guilds)} mosturized servers'))
 
     if not client.presence_changed:
         await change_activity
         client.presence_changed = True
-        logger.info(f"\nLogged in as {client.user}\n"
-                    "-------------\n")
+        logger.info(f'\nLogged in as {client.user}\n'
+                    '-------------\n')
     else:
         await change_activity
-        logger.info("\nRelogged in after disconnect!\n"
-                    "-------------\n")
+        logger.info('\nRelogged in after disconnect!\n'
+                    '-------------\n')
 
     await client.wait_until_ready()
     if not client.synced:

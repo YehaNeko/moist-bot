@@ -7,6 +7,7 @@ from typing import Any, Callable, Union, Optional
 from typing_extensions import Self
 
 from itertools import chain
+from math import log10
 
 # Additional
 from cogs.pfgun_utils.CacheManager import cache_arg, get_params
@@ -210,25 +211,11 @@ class Pfgun(commands.Cog):
         embed = PfGunEmbed(ctx)\
             .set_footer(text='Showing values for HP ammo type')
 
-        def approximate_r1(n) -> float:
-            return -2.3278*10**-7 * n**4 + 0.0000825125 * n**3 + -0.0114613 * n**2 + 0.863616 * n + 19.6925
-
         # Apply modifiers
         params['close_damage'] = str(float(params['close_damage']) * 1.2)
         params['long_damage'] = str(round(float(params['long_damage']) * (5 / 6), 2))
+        params['close_range'] = 25.325*log10(params['close_range'])
         params['long_range'] *= 0.9
-
-        r1_temp = r1_convert.get(params['close_range'])
-        if r1_temp is not None:
-            params['close_range'] = r1_temp
-        else:
-            params['close_range'] = approximate_r1(params['close_range'])
-            embed.add_field(
-                name='DISCLAIMER',
-                value=r'__Close damage range approximated due to the actual formula being unknown.__'
-                      f'\nError margin: +- 0.306 studs',
-                inline=False,
-            )
 
         # Update embed
         embed.gen_embed(**params)

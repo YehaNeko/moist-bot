@@ -5,6 +5,7 @@ from discord.ext import commands
 # Custom errors
 from cogs.mcserver import NotWhitelisted
 from cogs.mp3 import FileTooBig
+from asyncprawcore.exceptions import AsyncPrawcoreException
 
 logger = logging.getLogger('discord.' + __name__)
 
@@ -39,10 +40,10 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.CommandOnCooldown):
             await ctx.reply(f":warning: You are on cooldown. Try again in {(seconds := round(error.retry_after))} seconds.",
-                            delete_after=seconds + 1)
+                            delete_after=seconds + 1, ephemeral=True)
 
         elif isinstance(error, commands.DisabledCommand):
-            await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.')
+            await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.', ephemeral=True)
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
@@ -51,13 +52,19 @@ class ErrorHandler(commands.Cog):
                 pass
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.reply(f":warning: Missing required parameter `{error.param.name}`.")
+            await ctx.reply(f":warning: Missing required parameter `{error.param.name}`.", ephemeral=True)
 
         elif isinstance(error, commands.MemberNotFound):
-            await ctx.reply(f":warning: Member `{error.argument}` not found.")
+            await ctx.reply(f":warning: Member `{error.argument}` not found.", ephemeral=True)
 
         elif isinstance(error, commands.BadArgument):
-            await ctx.reply(f":warning: Bad parameter in `{ctx.current_parameter}`.")
+            if str(error):
+                return await ctx.reply(str(error), ephemeral=True)
+
+            await ctx.reply(f":warning: Bad parameter in `{ctx.current_parameter}`.", ephemeral=True)
+
+        elif isinstance(error, AsyncPrawcoreException):
+            return await ctx.reply(':anger: I cannot find that subreddit D:', ephemeral=True)
 
         else:
             # All other Errors not returned come here. And we can just print the default TraceBack.
@@ -66,7 +73,7 @@ class ErrorHandler(commands.Cog):
                 exc_info=error
             )
             await ctx.reply(f":anger: Command raised unhandled error:\n"
-                            f"`{error}`")
+                            f"`{error}`", ephemeral=True)
 
 
 async def setup(client):

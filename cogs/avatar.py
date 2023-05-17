@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
-
-import datetime
+from discord.utils import utcnow
 
 
 class AvatarEmbed(discord.Embed):
@@ -9,7 +8,7 @@ class AvatarEmbed(discord.Embed):
         super().__init__(
             type="image",
             color=discord.Color.random(),
-            timestamp=datetime.datetime.utcnow() if not has_guild_avatar else None,
+            timestamp=utcnow() if not has_guild_avatar else None,
         )
 
 

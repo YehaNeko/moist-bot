@@ -16,7 +16,6 @@ class Pp(commands.Cog):
 
         embed = discord.Embed(
             color=discord.Color.magenta(),
-            timestamp=datetime.datetime.utcnow(),
         )
         embed.set_author(
             name=user.display_name + "'s pp",
