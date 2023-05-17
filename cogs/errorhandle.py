@@ -43,7 +43,8 @@ class ErrorHandler(commands.Cog):
                             delete_after=seconds + 1, ephemeral=True)
 
         elif isinstance(error, commands.DisabledCommand):
-            await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.', ephemeral=True)
+            return
+            # await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.', ephemeral=True)
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
@@ -61,7 +62,11 @@ class ErrorHandler(commands.Cog):
             if str(error):
                 return await ctx.reply(str(error), ephemeral=True)
 
-            await ctx.reply(f":warning: Bad parameter in `{ctx.current_parameter}`.", ephemeral=True)
+        elif isinstance(error, commands.CheckFailure):
+            if str(error):
+                return await ctx.reply(f':warning: {str(error)}', ephemeral=True)
+
+            await ctx.reply(":warning: You are unable to run this command.", ephemeral=True)
 
         elif isinstance(error, AsyncPrawcoreException):
             return await ctx.reply(':anger: I cannot find that subreddit D:', ephemeral=True)
