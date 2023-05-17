@@ -3,7 +3,6 @@ import logging
 from discord.ext import commands
 
 # Custom errors
-from cogs.mcserver import NotWhitelisted
 from cogs.mp3 import FileTooBig
 from asyncprawcore.exceptions import AsyncPrawcoreException
 
