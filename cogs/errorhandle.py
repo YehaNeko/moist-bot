@@ -27,7 +27,7 @@ class ErrorHandler(commands.Cog):
         #     if cog._get_overridden_method(cog.cog_command_error) is not None:
         #         return
 
-        ignored = (commands.CommandNotFound, commands.NotOwner, NotWhitelisted, FileTooBig, )
+        ignored = (commands.CommandNotFound, commands.NotOwner, FileTooBig, )
 
         # Allows us to check for original exceptions raised and sent to CommandInvokeError.
         # If nothing is found. We keep the exception passed to on_command_error.
