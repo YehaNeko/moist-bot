@@ -12,7 +12,6 @@ from math import log10
 # Additional
 from cogs.pfgun_utils.CacheManager import cache_arg, get_params
 from cogs.pfgun_utils.dicts import *
-from cogs.pfgun_utils.SheetReader import get_gun_params
 
 
 class PfGunEmbed(discord.Embed):
@@ -199,7 +198,7 @@ class Pfgun(commands.Cog):
         if ctx.invoked_with == 'pfgun':  # Check if the command wasn't invoked by a subcommand
             cache_arg(ctx.args[1:])  # Args without command object
 
-    @pfgun.command(clean_params=True)
+    @pfgun.command()
     async def hp(self, ctx, user: Optional[Union[discord.Member, str]] = None):
         """ Applies modifiers to parameters and invokes main command """
 
@@ -222,7 +221,7 @@ class Pfgun(commands.Cog):
 
         await ctx.reply(embed=embed)
 
-    @pfgun.command(clean_params=True)
+    @pfgun.command()
     async def ap(self, ctx, user: Optional[Union[discord.Member, str]] = None):
         """ Applies modifiers to parameters and invokes main command """
 
@@ -240,7 +239,7 @@ class Pfgun(commands.Cog):
 
         await ctx.reply(embed=embed)
 
-    @pfgun.command(aliases=['last', 'clean', 'prev', 'previous', 'unmod', 'unmodified'], clean_params=True)
+    @pfgun.command(aliases=['last', 'clean', 'prev', 'previous', 'unmod', 'unmodified'])
     async def normal(self, ctx, user: Optional[Union[discord.Member, str]] = None):
         """ Invokes main command without modifiers """
 
@@ -255,25 +254,25 @@ class Pfgun(commands.Cog):
 
         await ctx.reply(embed=embed)
 
-    @pfgun.command(clean_params=True)
-    async def gun(self, ctx, *, gun):
-        """
-        Loads values from *PF Advance Statistics* sheet and invokes main command
-        Values from this command are cached
-        """
-        params = await get_gun_params(gun)
+    # @pfgun.command(clean_params=True)
+    # async def gun(self, ctx, *, gun):
+    #     """
+    #     Loads values from *PF Advance Statistics* sheet and invokes main command
+    #     Values from this command are cached
+    #     """
+    #     params = await get_gun_params(gun)
+    #
+    #     # Update embed
+    #     embed = PfGunEmbed(ctx)\
+    #         .gen_embed(**params)\
+    #         .set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
+    #
+    #     await ctx.reply(embed=embed)
+    #
+    #     # Cache
+    #     cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
-        # Update embed
-        embed = PfGunEmbed(ctx)\
-            .gen_embed(**params)\
-            .set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
-
-        await ctx.reply(embed=embed)
-
-        # Cache
-        cache_arg(list(chain.from_iterable([[ctx], params.values()])))
-
-    @pfgun.command(clean_params=True)
+    @pfgun.command()
     async def rpm(self, ctx, rpm: Union[int, float]):
         """ Changes *rpm* parameter and invokes main command """
         params = await get_params(str(ctx.author.id))
@@ -291,7 +290,7 @@ class Pfgun(commands.Cog):
         # Cache
         cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
-    @pfgun.command(aliases=['m', 'multiplier'], clean_params=True)
+    @pfgun.command(aliases=['m', 'multiplier'])
     async def multi(self, ctx, multiplier: float):
         """ Changes *multiplier* parameter and invokes main command
         """
