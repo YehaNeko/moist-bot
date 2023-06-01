@@ -1,15 +1,19 @@
 import discord
 from discord.ext import commands
-from config import TOKEN, GUILD_OBJECT
+from config import TOKEN
 
-from typing import Optional, Literal
+import logging
+from logging.handlers import RotatingFileHandler
 
 import asyncio
-import logging
 import os
 
 logger = logging.getLogger('discord.' + __name__)
 
+
+def _get_prefix(bot, message):
+    extras = ['water ', 'Water ']
+    return commands.when_mentioned_or(*extras)(bot, message)
 
 class MoistBot(commands.Bot):
     def __init__(self):
@@ -33,11 +37,11 @@ class MoistBot(commands.Bot):
         )
         super().__init__(
             case_insensitive=True,
-            command_prefix=commands.when_mentioned_or('water '),
+            command_prefix=_get_prefix,  # type: ignore
             allowed_mentions=allowed_mentions,
             intents=intents
         )
-        self.synced: bool = False
+        self.synced: bool = True
         self.presence_changed: bool = False
 
     async def load_cogs(self) -> None:
@@ -55,137 +59,16 @@ class MoistBot(commands.Bot):
 client = MoistBot()
 
 
-@client.command(hidden=True)
-@commands.is_owner()
-async def reload(ctx: commands.Context, ext: str = 'cmds'):
-    await client.reload_extension(f'cogs.{ext}')
-    await ctx.reply(f':repeat: Reloaded {ext}.')
-@reload.error
-async def on_error(ctx, error: commands.CommandError):
-    if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(":anger: Idiot, isn't a cog.")
-    else:
-        await ctx.reply(f':anger: Reloading raised an exception: `{type(error.__class__)}`\n'
-                        f"'{error}'")
-
-
-@client.command(hidden=True)
-@commands.is_owner()
-async def load(ctx: commands.Context, ext: str):
-    await client.load_extension(f'cogs.{ext}')
-    await ctx.reply(f':white_check_mark: Loaded {ext}.')
-@load.error
-async def on_error(ctx, error: commands.CommandError):
-    if isinstance(getattr(error, 'original', error), (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(f':anger: Unable to load cog.')
-    else:
-        logger.exception('Loading raised an exception', exc_info=error.__traceback__)
-        await ctx.reply(f':anger: Loading cog raised an exception: `{type(error.__class__)}`\n'
-                        f"'{error}'")
-
-
-@client.command(hidden=True)
-@commands.is_owner()
-async def unload(ctx: commands.Context, ext: str):
-    await client.unload_extension(f'cogs.{ext}')
-    await ctx.reply(f':white_check_mark: Unloaded {ext}.')
-@unload.error
-async def on_error(ctx, error: commands.CommandError):
-    if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
-        await ctx.reply(':anger: Unable to find cog.')
-
-
-@client.group(hiddden=True)
-@commands.is_owner()
-async def debug(_ctx):
-    pass
-
-
-@debug.command(name='unloadappcmd', hidden=True)
-@commands.is_owner()
-async def unload_app_cmd(ctx: commands.Context, cmd: str, resync: bool = False):
-    unloaded = client.tree.remove_command(cmd, guild=GUILD_OBJECT)
-
-    if resync:
-        await client.tree.sync(guild=GUILD_OBJECT)
-        await ctx.reply(f':white_check_mark: Unloaded and re-synced `{unloaded}`.')
-    else:
-        await ctx.reply(f':white_check_mark: Unloaded `{unloaded}`.\n'
-                        ':warning: Re-sync is required.')
-
-@unload_app_cmd.error
-async def on_error(ctx: commands.Context, _):
-    await ctx.reply(':anger: Unable to unload.')
-
-
-@debug.command(name='syncappcmds', hidden=True)
-@commands.is_owner()
-async def sync_app_cmds(ctx: commands.Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
-    if guild == 'global':
-        _guild = None
-        guild = 'global guilds'
-    elif guild == 'guild':
-        _guild = GUILD_OBJECT
-        guild = 'current guild'
-    else:
-        raise commands.BadArgument()
-
-    synced = await client.tree.sync(guild=_guild)
-    await ctx.reply(f':white_check_mark: Synced in *{guild}*:\n`%s`' % '\n'.join(repr(sync) for sync in synced))
-
-@unload_app_cmd.error
-async def on_error(ctx, _error: commands.CommandError):
-    await ctx.reply(':anger: Unable to sync application commands.')
-
-
-@debug.command(name='copyglobal', hidden=True)
-@commands.is_owner()
-async def copy_global_to_test_guild(ctx: commands.Context, resync: bool = True):
-
-    client.tree.copy_global_to(guild=GUILD_OBJECT)
-    await ctx.reply(':white_check_mark: Copied global app commands to *test guild*')
-
-    if resync:
-        await client.tree.sync(guild=GUILD_OBJECT)
-        await ctx.invoke(sync_app_cmds, guild='guild')
-
-
-@debug.command(name='getappcmds', hidden=True)
-@commands.is_owner()
-async def get_app_cmds(ctx: commands.Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
-    if guild == 'global':
-        _guild = None
-        guild = 'global guilds'
-    elif guild == 'guild':
-        _guild = GUILD_OBJECT
-        guild = 'current guild'
-    else:
-        raise commands.BadArgument()
-
-    cmds = await client.tree.fetch_commands(guild=_guild)
-    await ctx.reply(f':white_check_mark: Fetched {len(cmds)} command(s) in **{guild}**:\n ' +
-                    ('`%s`' % '\n'.join(repr(cmd) for cmd in cmds) if cmds else ''))
-
-
-@debug.command(hidden=True)
-@commands.is_owner()
-async def clear(ctx: commands.Context):
-    os.system('cls||clear')
-    await ctx.message.add_reaction('✅')
-    logger.info('Console cleared.')
-
-
 @commands.Bot.listen(client)
 async def on_ready():
     change_activity = client.change_presence(activity=discord.Game(f'with {len(client.guilds)} mosturized servers'))
 
+    await change_activity
     if not client.presence_changed:
-        await change_activity
         client.presence_changed = True
         logger.info(f'\nLogged in as {client.user}\n'
                     '-------------\n')
     else:
-        await change_activity
         logger.info('\nRelogged in after disconnect!\n'
                     '-------------\n')
 
@@ -194,12 +77,15 @@ async def on_ready():
         await client.tree.sync(guild=None)
         client.synced = True
 
-
+# Setup file logging
+max_bytes = 32 * 1024 * 1024  # 32 MiB
 file_logger = logging.getLogger('discord')
 file_logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+file_handler = RotatingFileHandler(filename='discord.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=356)
 dt_fmt = '%Y-%m-%d %H:%M:%S'
 file_handler.setFormatter(logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{'))
 file_logger.addHandler(file_handler)
 
-client.run(TOKEN)
+# Run bot
+if __name__ == '__main__':
+    client.run(TOKEN)
