@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, AsyncIterator, Annotated, Any, Union
 import logging
 import asyncpraw
 from asyncpraw import reddit
+from asyncprawcore.exceptions import AsyncPrawcoreException
+import json
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -77,10 +79,17 @@ class RedditPostTask(tasks.Loop):
         self.submissions: AsyncIterator = subreddit.hot(limit=None)  # NOQA
         super().__init__(self.send_post, *args, **kwargs)
 
+        self._current_submission: reddit.Submission | None = None
+        # self.add_exception_type(AsyncPrawcoreException, )
+        self.error(self.on_error)
+
+
     async def send_post(self) -> None:
         """Callback func for tasks"""
 
         submission: reddit.Submission = await anext(self.submissions)
+        await submission.load()
+        self._current_submission = submission
 
         # Filter out posts
         if (
@@ -100,6 +109,12 @@ class RedditPostTask(tasks.Loop):
         # Send post
         await self.channel.send(embed=RedditPostEmbed(submission, op))
         logger.info(self.channel)
+
+    async def on_error(self, *args: Any):
+        exception: Exception = args[-1]
+        logger.error('Unhandled exception in internal background task %r.', self.coro.__name__, exc_info=exception)
+        # print(json.dumps(self._current_submission.__dict__))
+        logger.warning('The bellow submission caused an exception: \n%s', json.dumps(self._current_submission.__dict__))
 
 
 class RedditAutoPost(commands.Cog):
@@ -139,7 +154,7 @@ class RedditAutoPost(commands.Cog):
         self,
         ctx: commands.Context,
         subreddit_name: str,
-        channel: Annotated[Union[DMChannel, TextChannel], ResolveChannel],
+        channel: Annotated[Union[DMChannel, TextChannel, discord.User], ResolveChannel],
         interval: float,
     ):
         """Have the bot automatically send posts from any subreddit"""
@@ -184,7 +199,7 @@ class RedditAutoPost(commands.Cog):
     @auto_send_reddit.command()
     async def stop(
         self,
-        ctx,
+        ctx: commands.Context,
         channel: Annotated[Union[DMChannel, TextChannel, discord.User], ResolveChannel],
     ):
         """Stop sending reddit posts in a channel"""
