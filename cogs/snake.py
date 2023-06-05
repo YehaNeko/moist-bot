@@ -105,14 +105,8 @@ class SnakeGameContainer(object):
         self.perf_render_begin: int = 0
         self.perf_render_end: int = 0
 
-    def _move_snake(self, x: int, y: int, has_eaten: bool = False) -> None:
+    def _move_snake(self, has_eaten: bool = False) -> None:
         """Increment `self.snake_head` by `x` or `y`"""
-
-        # Value checks
-        if x == y == 0:
-            raise ValueError("Both arguments cannot be 0.")
-        elif x + y > 1:
-            raise ValueError("Cannot move more than 1 tile at once.")
 
         self.snake_body = np.roll(self.snake_body, 1, axis=0)
         self.snake_body.put((0, 1), self.snake_head)
@@ -128,13 +122,19 @@ class SnakeGameContainer(object):
         This essentially works as the event loop.
         """
 
+        # Value checks
+        if x == y == 0:
+            raise ValueError("Both arguments cannot be 0.")
+        elif x + y > 1:
+            raise ValueError("Cannot move more than 1 tile at once.")
+
         # If the snake is about to eat an apple
         self.moved_snake_head = self.snake_head.copy() + (x, y)
         if has_eaten := np.array_equal(self.moved_snake_head, self.apple):
             self.game_score += 1
             self.snake_body_size += 1
 
-        self._move_snake(x, y, has_eaten)
+        self._move_snake(has_eaten)
 
         # Win condition
         if self.snake_body_size + 1 == self.max_field_size:
@@ -317,6 +317,7 @@ class SnakeGameView(discord.ui.View):
             self.opposite_button.disabled = True
             if self.last_opposite_button:
                 self.last_opposite_button.disabled = False
+
         self.last_opposite_button = self.opposite_button
 
         # Move
@@ -365,14 +366,18 @@ class SnakeGame(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
 
-    @commands.hybrid_command()
+    @commands.hybrid_command(fallback='')
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
-    @app_commands.describe(
-        x="Game size along the X axis (default 10)",
-        y="Game size along the Y axis (default 10)"
-    )
-    async def snake(self, ctx: commands.Context, x: Optional[int] = 10, y: Optional[int] = 10):
+    # @app_commands.describe(
+    #     x="Game size along the X axis (default 10)",
+    #     y="Game size along the Y axis (default 10)"
+    # )
+    # async def snake(self, ctx: commands.Context, x: Optional[int] = 10, y: Optional[int] = 10):
+    async def snake(self, ctx: commands.Context):
         """Play a snake game on discord!"""
+
+        # TODO: restore ability to change game size
+        x, y = 10, 10
 
         # Size check
         if abs(x * y) >= 200:
@@ -380,7 +385,7 @@ class SnakeGame(commands.Cog):
 
         game_instance = SnakeGameContainer(x, y)
         view = SnakeGameView(ctx=ctx, game_instance=game_instance)
-        view.message = message = await ctx.send(game_instance.render(), view=view)
+        view.message = message = await ctx.send("You have 15s to move!\n" + game_instance.render(), view=view)
         active_snake_games.update({message.id: view})
 
         # Cleanup

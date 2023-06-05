@@ -12,11 +12,11 @@ class Cmds(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
-    async def ping(self, ctx, *, msg: Union[escape_mentions, str] = "Pong!"):
+    async def ping(self, ctx: commands.Context, *, msg: Union[escape_mentions, str] = 'Pong!'):
         before = time.monotonic()
-        message = await ctx.reply(f"{msg}")
+        message = await ctx.reply(f'{msg}')
         ping = (time.monotonic() - before) * 1000
-        await message.edit(content=f"{msg} in {int(ping)}ms")
+        await message.edit(content=f'{msg} in {int(ping)}ms')
 
     """
     @commands.command()

@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 
 from random import randint
-import datetime
 
 
 class Pp(commands.Cog):
@@ -23,7 +22,7 @@ class Pp(commands.Cog):
         )
 
         # NOT RIGGED
-        rigged = [150560836971266048, 311184299623972864, ]
+        rigged = [150560836971266048, 311184299623972864, 1022178996827455498, ]
         size = randint(0, 30) if user.id not in rigged else randint(200, 500)
 
         peepee = "8" + "="*size + "D"

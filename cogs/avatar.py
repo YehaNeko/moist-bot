@@ -39,7 +39,7 @@ class Avatar(commands.Cog):
         *,
         user: Annotated[Union[discord.User, discord.Member], commands.MemberConverter] = commands.Author
     ):
-        """ Display a user's avatar. """
+        """Display a user's avatar."""
 
         has_ga: bool = hasattr(user, 'guild_avatar') and user.guild_avatar
         embeds: list[discord.Embed] = []

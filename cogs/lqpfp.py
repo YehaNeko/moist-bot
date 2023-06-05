@@ -29,7 +29,7 @@ class AvatarEmbed(discord.Embed):
 
 
 class LowQualityProfilePicture(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: MoistBot):
         self.client: MoistBot = client
         self.executor = ProcessPoolExecutor()
         self.execute = self.client.loop.run_in_executor
