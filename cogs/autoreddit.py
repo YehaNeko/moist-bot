@@ -97,6 +97,7 @@ class RedditPostTask(tasks.Loop):
             or submission.stickied
             or submission.pinned
             or submission.distinguished == "moderator"
+            or not hasattr(submission, "post_hint")
             or submission.post_hint != "image"
         ):
             return await self.send_post()
