@@ -204,6 +204,11 @@ class RedditAutoPost(commands.Cog):
         channel: Annotated[Union[DMChannel, TextChannel, discord.User], ResolveChannel],
     ):
         """Stop sending reddit posts in a channel"""
+
+        # Ensure running task in selected channel
+        if not channel.id in self.running_tasks.keys():
+            await ctx.reply(":warning: I am not auto-posting in that channel!")
+
         self.running_tasks[channel.id].cancel()
         self.running_tasks.pop(channel.id)
 
@@ -216,7 +221,6 @@ class RedditAutoPost(commands.Cog):
             name=f"Stopped by {ctx.author.display_name}",
             icon_url=ctx.author.display_avatar.url,
         )
-        # TODO: check channel.id in self.running_tasks
 
         await ctx.reply(embed=embed)
 
