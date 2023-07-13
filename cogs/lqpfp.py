@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import discord
 from discord.ext import commands
-from typing import TYPE_CHECKING, Annotated, Union
+from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 import io
 from PIL import Image
@@ -24,7 +24,6 @@ class AvatarEmbed(discord.Embed):
         self.set_author(
             name=f"{user.display_name}'s low quality avatar",
             icon_url='attachment://image.png'
-            # url='attachment://image.png',
         )
 
 
@@ -35,7 +34,7 @@ class LowQualityProfilePicture(commands.Cog):
         self.execute = self.client.loop.run_in_executor
 
     @staticmethod
-    def _get_buffer(img: bytes, lq_f: int = 1) -> io.BytesIO:
+    def _get_buffer(img: bytes, lq_f: float = 1) -> io.BytesIO:
         img = Image.open(io.BytesIO(img))
 
         s, _ = org_size = img.size
@@ -55,8 +54,7 @@ class LowQualityProfilePicture(commands.Cog):
         self,
         ctx: commands.Context,
         user: Annotated[Union[discord.User, discord.Member], commands.MemberConverter] = commands.Author,
-        *,
-        factor: int = 1
+        factor: Optional[float] = 1
     ):
         """Display a low quality version of a user's avatar."""
 
