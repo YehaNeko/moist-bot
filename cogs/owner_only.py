@@ -160,6 +160,36 @@ class OwnerOnly(commands.Cog):
                 % (role.name, member.name + '#' + member.discriminator)
             )
 
+    @debug.group(hidden=True, invoke_without_command=True)
+    async def emoji(self, _ctx: commands.Context):
+        pass
 
-async def setup(client: commands.Bot):
+    @emoji.command()
+    async def add(self, ctx: commands.Context, alias: str, emoji_link: str):
+        emoji: bytes = await self.client.http.get_from_cdn(emoji_link)
+        await ctx.guild.create_custom_emoji(name=alias, image=emoji)
+        await ctx.reply(f':white_check_mark: Added emoji :{alias}:')
+
+    @add.error
+    async def on_error(self, ctx: commands.Context, error: discord.DiscordException):
+        error = getattr(error, 'original', error)
+
+        if isinstance(error, discord.Forbidden):
+            await ctx.reply(':no_entry: lol I dont have the perms for that xd')
+
+        elif isinstance(error, discord.HTTPException):
+            await ctx.reply(':warning: Unable to resolve emoji')
+
+        else:
+            logger.exception('Unable to add emoji', exc_info=error.__traceback__)
+            await ctx.reply(":no_entry: I can't do that :(")
+
+
+    @emoji.command(aliases=['del', 'delete'])
+    async def remove(self, ctx: commands.Context, alias: str):
+        emoji = discord.utils.get(ctx.guild.emojis, name=alias)
+        await ctx.guild.delete_emoji(emoji)
+        await ctx.reply(':white_check_mark: Deleted emoji.')
+
+async def setup(client: MoistBot):
     await client.add_cog(OwnerOnly(client))
