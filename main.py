@@ -77,15 +77,19 @@ async def on_ready():
         await client.tree.sync(guild=None)
         client.synced = True
 
-# Setup file logging
-max_bytes = 32 * 1024 * 1024  # 32 MiB
-file_logger = logging.getLogger('discord')
-file_logger.setLevel(logging.DEBUG)
-file_handler = RotatingFileHandler(filename='discord.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=356)
-dt_fmt = '%Y-%m-%d %H:%M:%S'
-file_handler.setFormatter(logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{'))
-file_logger.addHandler(file_handler)
 
-# Run bot
+# Prevent multiple bot logins
 if __name__ == '__main__':
+
+    # Setup file logging
+    max_bytes = 32 * 1024 * 1024  # 32 MiB
+    dt_fmt = '%Y-%m-%d %H:%M:%S'
+    file_handler = RotatingFileHandler(filename='discord.log', encoding='utf-8', mode='w', maxBytes=max_bytes,backupCount=356)
+    file_handler.setFormatter(logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{'))
+
+    file_logger = logging.getLogger('discord')
+    file_logger.setLevel(logging.DEBUG)
+    file_logger.addHandler(file_handler)
+
+    # Run bot
     client.run(TOKEN)
