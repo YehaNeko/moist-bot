@@ -1,20 +1,31 @@
+from __future__ import annotations
+
 import discord
 from discord.ext import commands
+import discord.utils
 from config import GUILD_OBJECT
 
 import os
 import logging
 from typing import TYPE_CHECKING, Optional, Literal, Annotated
 
+if TYPE_CHECKING:
+    from main import MoistBot
+
 
 logger = logging.getLogger('discord.' + __name__)
 
 class OwnerOnly(commands.Cog):
-    def __init__(self, client):
-        self.client  = client
+    def __init__(self, client: MoistBot):
+        self.client: MoistBot= client
 
-    @commands.command(hidden=True)
+    async def cog_check(self, ctx: commands.Context) -> bool:
+        if not await ctx.bot.is_owner(ctx.author):
+            raise commands.NotOwner('You do not own this bot.')
+        return True
+
     @commands.is_owner()
+    @commands.command(hidden=True)
     async def reload(self, ctx: commands.Context, ext: str = 'cmds'):
         await self.client.reload_extension(f'cogs.{ext}')
         await ctx.reply(f':repeat: Reloaded {ext}.')
@@ -24,11 +35,12 @@ class OwnerOnly(commands.Cog):
         if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
             await ctx.reply(":anger: Idiot, isn't a cog.")
         else:
+            logger.exception(f'Reloading raised an exception: `{type(error.__class__)}`\n', exc_info=error.__traceback__)
             await ctx.reply(f':anger: Reloading raised an exception: `{type(error.__class__)}`\n'
                             f"'{error}'")
 
-    @commands.command(hidden=True)
     @commands.is_owner()
+    @commands.command(hidden=True)
     async def load(self, ctx: commands.Context, ext: str):
         await self.client.load_extension(f'cogs.{ext}')
         await ctx.reply(f':white_check_mark: Loaded {ext}.')
@@ -42,8 +54,8 @@ class OwnerOnly(commands.Cog):
             await ctx.reply(f':anger: Loading cog raised an exception: `{type(error.__class__)}`\n'
                             f"'{error}'")
 
-    @commands.command(hidden=True)
     @commands.is_owner()
+    @commands.command(hidden=True)
     async def unload(self, ctx: commands.Context, ext: str):
         await self.client.unload_extension(f'cogs.{ext}')
         await ctx.reply(f':white_check_mark: Unloaded {ext}.')
@@ -53,13 +65,13 @@ class OwnerOnly(commands.Cog):
         if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
             await ctx.reply(':anger: Unable to find cog.')
 
-    @commands.group(hiddden=True)
     @commands.is_owner()
+    @commands.group(hiddden=True)
     async def debug(self, _ctx):
         pass
 
-    @debug.command(name='unloadappcmd', hidden=True)
     @commands.is_owner()
+    @debug.command(name='unloadappcmd', hidden=True)
     async def unload_app_cmd(self, ctx: commands.Context, cmd: str, resync: bool = False):
         unloaded = self.client.tree.remove_command(cmd, guild=GUILD_OBJECT)
 
@@ -74,8 +86,8 @@ class OwnerOnly(commands.Cog):
     async def on_error(self, ctx: commands.Context, _):
         await ctx.reply(':anger: Unable to unload.')
 
-    @debug.command(name='syncappcmds', hidden=True)
     @commands.is_owner()
+    @debug.command(name='syncappcmds', hidden=True)
     async def sync_app_cmds(self, ctx: commands.Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
         if guild == 'global':
             _guild = None
@@ -93,8 +105,8 @@ class OwnerOnly(commands.Cog):
     async def on_error(self, ctx, _error: commands.CommandError):
         await ctx.reply(':anger: Unable to sync application commands.')
 
-    @debug.command(name='copyglobal', hidden=True)
     @commands.is_owner()
+    @debug.command(name='copyglobal', hidden=True)
     async def copy_global_to_test_guild(self, ctx: commands.Context, resync: bool = True):
 
         self.client.tree.copy_global_to(guild=GUILD_OBJECT)
@@ -104,8 +116,8 @@ class OwnerOnly(commands.Cog):
             await self.client.tree.sync(guild=GUILD_OBJECT)
             await ctx.invoke(self.sync_app_cmds, guild='guild')  # type: ignore
 
-    @debug.command(name='getappcmds', hidden=True)
     @commands.is_owner()
+    @debug.command(name='getappcmds', hidden=True)
     async def get_app_cmds(self, ctx: commands.Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
         if guild == 'global':
             _guild = None
@@ -120,22 +132,21 @@ class OwnerOnly(commands.Cog):
         await ctx.reply(f':white_check_mark: Fetched {len(cmds)} command(s) in **{guild}**:\n ' +
                         ('`%s`' % '\n'.join(repr(cmd) for cmd in cmds) if cmds else ''))
 
-    @debug.command(hidden=True)
     @commands.is_owner()
+    @debug.command(hidden=True)
     async def clear(self, ctx: commands.Context):
         os.system('cls||clear')
         await ctx.message.add_reaction('✅')
         logger.info('Console cleared.')
 
-    @debug.command(hidden=True)
     @commands.is_owner()
     @commands.guild_only()
+    @debug.command(hidden=True)
     async def give_role(
-            self,
-            ctx: commands.Context,
-            role: Annotated[discord.Role, commands.RoleConverter],
-            *,
-            member: Annotated[discord.Member, commands.MemberConverter] = commands.Author
+        self,
+        ctx: commands.Context,
+        role: Annotated[discord.Role, commands.RoleConverter], *,
+        member: Annotated[discord.Member, commands.MemberConverter] = commands.Author
     ):
         """Give someone a role."""
 
