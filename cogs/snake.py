@@ -23,11 +23,11 @@ DO_PERF_TIMING: bool = False
 class SnakeGameContainer(object):
     """Container for a snake game holding the current game state and logic"""
 
-    __slots__ = [
+    __slots__ = (
         'field_size', 'max_field_size', 'empty_field', 'field', 'rendered_field', 'init_snake_body_len',
         'snake_head', 'moved_snake_head', 'snake_body', 'apple', 'game_score', 'alive', 'snake_body_size',
         'perf_move_snake_begin', 'perf_move_snake_end', 'perf_render_begin', 'perf_render_end',
-    ]
+    )
 
     assets = {
         'empty': '🟪',
