@@ -11,6 +11,7 @@ from concurrent.futures import ProcessPoolExecutor
 if TYPE_CHECKING:
     from main import MoistBot
 
+
 class AvatarEmbed(discord.Embed):
     def __init__(
         self,
