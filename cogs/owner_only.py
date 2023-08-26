@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import discord
-from discord.ext import commands
 import discord.utils
+from discord.ext import commands
 from config import GUILD_OBJECT
 
 import os
@@ -15,9 +15,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger('discord.' + __name__)
 
+
 class OwnerOnly(commands.Cog):
+    """Debug commands that only the bot owner can use"""
+
     def __init__(self, client: MoistBot):
-        self.client: MoistBot= client
+        self.client: MoistBot = client
 
     async def cog_check(self, ctx: commands.Context) -> bool:
         if not await ctx.bot.is_owner(ctx.author):
@@ -35,7 +38,8 @@ class OwnerOnly(commands.Cog):
         if isinstance(getattr(error, 'original', error), (commands.ExtensionNotLoaded, commands.ExtensionNotFound)):
             await ctx.reply(":anger: Idiot, isn't a cog.")
         else:
-            logger.exception(f'Reloading raised an exception: `{type(error.__class__)}`\n', exc_info=error.__traceback__)
+            logger.exception(f'Reloading raised an exception: `{type(error.__class__)}`\n',
+                             exc_info=error.__traceback__)
             await ctx.reply(f':anger: Reloading raised an exception: `{type(error.__class__)}`\n'
                             f"'{error}'")
 
@@ -178,18 +182,19 @@ class OwnerOnly(commands.Cog):
             await ctx.reply(':no_entry: lol I dont have the perms for that xd')
 
         elif isinstance(error, discord.HTTPException):
+            logger.exception('Unable to add emoji', exc_info=error.__traceback__)
             await ctx.reply(':warning: Unable to resolve emoji')
 
         else:
             logger.exception('Unable to add emoji', exc_info=error.__traceback__)
             await ctx.reply(":no_entry: I can't do that :(")
 
-
     @emoji.command(aliases=['del', 'delete'])
     async def remove(self, ctx: commands.Context, alias: str):
         emoji = discord.utils.get(ctx.guild.emojis, name=alias)
         await ctx.guild.delete_emoji(emoji)
         await ctx.reply(':white_check_mark: Deleted emoji.')
+
 
 async def setup(client: MoistBot):
     await client.add_cog(OwnerOnly(client))
