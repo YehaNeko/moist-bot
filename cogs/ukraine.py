@@ -3,18 +3,21 @@ from __future__ import annotations
 import discord
 from discord import app_commands
 from discord.ext import commands
-from config import GUILD_OBJECT
 
-import io
-from typing import Union, Tuple, Optional, TYPE_CHECKING
+from io import BytesIO
 from PIL import Image, ImageDraw, ImageFilter
+from typing import TYPE_CHECKING, Optional, Union
+from concurrent.futures import ProcessPoolExecutor
 
 if TYPE_CHECKING:
     from main import MoistBot
+    from utils.context import Context
 
-FLAG_UA = Image.open("./assets/Ukraine flag.png").convert("RGBA")
+
+FLAG_UA = Image.open('./assets/Ukraine flag.png').convert('RGBA')
 
 
+# TODO: some major cleanup is needed in this class
 class ImageGen:
     def __init__(self, avatar: Image.Image, ring: Union[int, float] = 7, upscale: int = 4):
         self.avatar: Image.Image = avatar
@@ -44,19 +47,19 @@ class ImageGen:
 
     @staticmethod
     def _gen_mask(
-            *,
-            start_size: Tuple[int, int],
-            x1y1: Tuple[int, int],
-            x2y2: Tuple[int, int],
-            final_size: Tuple[int, int],
-            descale: Optional[Union[int, float]] = 0
+        *,
+        start_size: tuple[int, int],
+        x1y1: tuple[float, float],
+        x2y2: tuple[float, float],
+        final_size: tuple[int, int],
+        descale: Optional[Union[int, float]] = 0,
     ) -> Image.Image:
         """Generate a smooth ellipse mask"""
 
         # Upscaled ellipse mask
-        mask = Image.new("L", start_size, 0)
+        mask = Image.new('L', start_size)
         draw = ImageDraw.Draw(mask)
-        draw.ellipse((x1y1[0] + descale, x1y1[1] + descale, x2y2[0] - descale, x2y2[1] - descale), fill=255)
+        draw.ellipse(xy=(x1y1[0] + descale, x1y1[1] + descale, x2y2[0] - descale, x2y2[1] - descale), fill=255)
 
         mask = mask.resize(final_size, Image.BICUBIC)  # Downscale to smooth ellipse mask
         mask = mask.filter(ImageFilter.SMOOTH)  # Smooth edges
@@ -65,7 +68,7 @@ class ImageGen:
     def proportional(self) -> Image.Image:
         """Proportional ring generator"""
 
-        masked_avatar = Image.new("RGBA", (self.r_width, self.r_height), (255, 255, 255, 0))
+        masked_avatar = Image.new('RGBA', (self.r_width, self.r_height), color=(255, 255, 255, 0))
         avatar = self.avatar.resize((self.r_width, self.r_height), Image.LANCZOS)
 
         masked_avatar = Image.composite(
@@ -75,8 +78,8 @@ class ImageGen:
                 start_size=(self.ru_width, self.ru_height),
                 x1y1=(0, 0),
                 x2y2=(self.ru_width, self.ru_width),
-                final_size=(self.r_width, self.r_height)
-            )
+                final_size=(self.r_width, self.r_height),
+            ),
         )
 
         self.flag_ua.paste(
@@ -87,8 +90,8 @@ class ImageGen:
                 x1y1=(0, 0),
                 x2y2=(self.ru_width, self.ru_width),
                 final_size=(self.r_width, self.r_height),
-                descale=4
-            )
+                descale=4,
+            ),
         )
 
         return self.flag_ua
@@ -103,8 +106,8 @@ class ImageGen:
                 start_size=(self.u_width, self.u_height),
                 x1y1=(self.u_ring_w, self.u_ring_h),
                 x2y2=(self.u_height - self.u_ring_w, self.u_height - self.u_ring_h),
-                final_size=self.avatar.size
-            )
+                final_size=self.avatar.size,
+            ),
         )
         return img
 
@@ -112,49 +115,47 @@ class ImageGen:
 class Ukraine(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
+        self.executor = ProcessPoolExecutor()
         self.execute = self.client.loop.run_in_executor
 
-    # # Method called by discord.py
-    # async def cog_command_error(self, ctx: commands.Context, error):
-    #     pass
-
     @staticmethod
-    def _get_buffer(avatar) -> io.BytesIO:
-        buffer = io.BytesIO()
+    def _get_buffer(avatar: bytes) -> BytesIO:
+        buffer = BytesIO(avatar)
+        avatar = Image.open(buffer)
         img = ImageGen(avatar).proportional()
-        img.save(buffer, "png")
+        buffer.flush()
+        buffer.seek(0)
+
+        img.save(buffer, 'png')
         buffer.seek(0)
         return buffer
 
-    @commands.hybrid_command(with_app_command=False, hidden=True)
     @commands.is_owner()
-    @commands.cooldown(rate=1, per=2, type=commands.BucketType.user)
-    @app_commands.describe(user="Optionally select a user")
-    async def ukraine(self, ctx: commands.Context, *, user: discord.User = commands.Author):
+    @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
+    @app_commands.describe(user='Optionally select a user.')
+    @commands.hybrid_command()
+    async def ukraine(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
         """Generates a Ukrainian colored ring border around someone's avatar"""
 
         async with ctx.typing():
             try:
                 # Get avatar
-                avatar: bytes = await user.display_avatar.with_format("png").with_size(2048).read()
-                avatar: Image.Image = Image.open(io.BytesIO(avatar))
+                avatar: bytes = await user.display_avatar.with_format('png').with_size(2048).read()
 
-                # Avoid blocking TODO: should probably use some form of multiprocessing instead
-                img_buffer = await self.execute(None, self._get_buffer, avatar)
+                # Avoid blocking
+                img_buffer = await self.execute(self.executor, self._get_buffer, avatar)
 
                 # Send image
-                await ctx.reply(file=discord.File(fp=img_buffer, filename="image.png"))
+                await ctx.reply(file=discord.File(fp=img_buffer, filename='image.png'))
 
             finally:
                 # Free memory
                 img_buffer.close()
-                avatar.close()
                 del img_buffer, avatar
+
+    async def cog_unload(self) -> None:
+        self.executor.shutdown(wait=False)
 
 
 async def setup(client):
     await client.add_cog(Ukraine(client))
-
-
-async def teardown(client):
-    client.tree.remove_command('ukraine')
