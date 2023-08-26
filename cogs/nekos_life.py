@@ -64,7 +64,7 @@ class Neko(commands.Cog):
 
     @property
     def display_emoji(self) -> discord.PartialEmoji:
-        return discord.PartialEmoji(name="\U0001f43e")
+        return discord.PartialEmoji(name='\U0001f43e')
 
     @staticmethod
     async def _neko_callback(ctx: Context, *args) -> None:
