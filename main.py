@@ -29,25 +29,18 @@ class MoistBot(commands.Bot):
         allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
         intents = discord.Intents(
             emojis_and_stickers=True,
-            guilds=True,
+            message_content=True,
+            reactions=True,
+            webhooks=True,
+            messages=True,
             invites=True,
             members=True,
-            message_content=True,
-            messages=True,
-            reactions=True,
-            typing=True,
-            webhooks=True,
-            bans=False,
-            presences=False,
-            dm_typing=False,
-            guild_typing=False,
-            integrations=False,
-            voice_states=False,
+            guilds=True,
         )
         super().__init__(
-            case_insensitive=True,
-            command_prefix=_get_prefix,  # type: ignore
             allowed_mentions=allowed_mentions,
+            command_prefix=_get_prefix,  # type: ignore
+            case_insensitive=True,
             intents=intents
         )
         self.synced: bool = True
@@ -64,7 +57,7 @@ class MoistBot(commands.Bot):
     async def setup_hook(self):
         await asyncio.create_task(self.load_cogs())
 
-    async def get_context(self,origin: Message | Interaction, /, *, cls: Context = Context) -> Context:
+    async def get_context(self, origin: Message | Interaction, /, *, cls: Context = Context) -> Context:
         return await super().get_context(origin, cls=cls)  # type: ignore
 
 
@@ -73,7 +66,7 @@ client = MoistBot()
 
 @commands.Bot.listen(client)
 async def on_ready():
-    change_activity = client.change_presence(activity=discord.Game(f'with {len(client.guilds)} mosturized servers'))
+    change_activity = client.change_presence(activity=discord.Game(f'with {len(client.guilds)} moisturised servers'))
 
     await change_activity
     if not client.presence_changed:
