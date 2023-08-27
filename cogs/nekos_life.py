@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import discord
+from discord.utils import escape_mentions
 from discord.ext import commands
 
 import nekos
@@ -23,27 +24,27 @@ class Neko(commands.Cog):
 
     # All possible entries for `img` endpoint
     entries = {
-        "wallpaper",
-        "ngif",
-        "tickle",
-        "feed",
-        "gecg",
-        "gasm",
-        "slap",
-        "avatar",
-        "lizard",
-        "waifu",
-        "pat",
-        "8ball",
-        "kiss",
-        "neko",
-        "spank",
-        "cuddle",
-        "fox_girl",
-        "hug",
-        "smug",
-        "goose",
-        "woof",
+        'wallpaper',
+        'ngif',
+        'tickle',
+        'feed',
+        'gecg',
+        'gasm',
+        'slap',
+        'avatar',
+        'lizard',
+        'waifu',
+        'pat',
+        '8ball',
+        'neko',
+        'cuddle',
+        'fox_girl',
+        'hug',
+        'smug',
+        'goose',
+        'woof',
+        # 'kiss',
+        # 'spank',
         # 'lewd', Provides 1 image
     }
 
@@ -84,12 +85,12 @@ class Neko(commands.Cog):
     @neko.command(rest_is_raw=True)
     async def owoify(self, ctx: Context, *, text: str):
         """Input text to be owofied!"""
-        await self._neko_callback(ctx, text)
+        await self._neko_callback(ctx, escape_mentions(text))
 
     @neko.command(rest_is_raw=True)
     async def spoiler(self, ctx: Context, *, text: str):
         """Input text to be spoiled per letter!"""
-        await self._neko_callback(ctx, text)
+        await self._neko_callback(ctx, escape_mentions(text))
 
     @neko.command()
     async def cat(self, ctx: Context):
