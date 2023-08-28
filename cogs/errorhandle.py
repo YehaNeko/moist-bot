@@ -77,6 +77,9 @@ class ErrorHandler(commands.Cog):
             if str(error):
                 return await ctx.reply(str(error), ephemeral=True)
 
+        elif isinstance(error, commands.NSFWChannelRequired):
+            return await ctx.reply(f':no_entry_sign: `{ctx.command}` can only be used in NSFW channels.')
+
         elif isinstance(error, commands.CheckFailure):
             if str(error):
                 return await ctx.reply(f':warning: {str(error)}', ephemeral=True)
