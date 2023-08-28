@@ -114,7 +114,6 @@ class Neko(commands.Cog):
     def display_emoji(self) -> discord.PartialEmoji:
         return discord.PartialEmoji(name='\U0001f43e')
 
-    @commands.is_owner()
     @commands.cooldown(rate=1, per=1, type=commands.BucketType.user)
     @commands.group()
     async def neko(self, ctx: Context):
