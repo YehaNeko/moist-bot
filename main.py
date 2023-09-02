@@ -10,13 +10,15 @@ from logging.handlers import RotatingFileHandler
 
 import os
 import asyncio
-from typing import TYPE_CHECKING
+from datetime import datetime
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from discord import Message, Interaction
 
 
 logger = logging.getLogger('discord.' + __name__)
+sep = '-' * 12
 
 
 def _get_prefix(bot, message):
@@ -43,11 +45,11 @@ class MoistBot(commands.Bot):
             case_insensitive=True,
             intents=intents
         )
+        self.started_at: Optional[datetime] = None
         self.synced: bool = True
-        self.presence_changed: bool = False
 
     async def load_cogs(self) -> None:
-        for filename in os.listdir(r'./cogs'):
+        for filename in os.listdir('./cogs'):
             if filename.endswith('.py'):
                 try:
                     await self.load_extension(f'cogs.{filename[:-3]}')
@@ -60,27 +62,23 @@ class MoistBot(commands.Bot):
     async def get_context(self, origin: Message | Interaction, /, *, cls: Context = Context) -> Context:
         return await super().get_context(origin, cls=cls)  # type: ignore
 
+    async def on_ready(self):
+        guilds = len(self.guilds)
+        await self.change_presence(activity=discord.Game(f'with {guilds} moisturised servers'))
+
+        if not self.started_at:
+            self.started_at = discord.utils.utcnow()
+            logger.info(f'\nLogged in as {self.user}\n{sep}\n')
+        else:
+            logger.info(f'\nRelogged in after disconnect!\n{sep}\n')
+        
+        if not self.synced:
+            await self.wait_until_ready()
+            await self.tree.sync(guild=None)  # noqa
+            self.synced = True
+
 
 client = MoistBot()
-
-
-@commands.Bot.listen(client)
-async def on_ready():
-    change_activity = client.change_presence(activity=discord.Game(f'with {len(client.guilds)} moisturised servers'))
-
-    await change_activity
-    if not client.presence_changed:
-        client.presence_changed = True
-        logger.info(f'\nLogged in as {client.user}\n'
-                    '-------------\n')
-    else:
-        logger.info('\nRelogged in after disconnect!\n'
-                    '-------------\n')
-
-    await client.wait_until_ready()
-    if not client.synced:
-        await client.tree.sync(guild=None)  # noqa
-        client.synced = True
 
 
 # Prevent multiple bot logins
