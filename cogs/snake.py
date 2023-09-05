@@ -16,7 +16,6 @@ from discord.ext import commands
 if TYPE_CHECKING:
     from main import MoistBot
     from cogs.utils.context import Context
-    from discord import Message, Interaction
 
 
 logger = logging.getLogger('discord.' + __name__)
@@ -157,7 +156,7 @@ class SnakeGameContainer:
             self.snake_body_len += 1
 
             # Respawn apple
-            # note this is highly inefficient and flawed (oh well uwu)
+            # note this is highly inefficient and flawed (oh well... uwu)
             self._respawn_apple()
             while (
                 np.any(np.all(self.apple == self.snake_body[: self.snake_body_len], axis=1))
@@ -406,16 +405,12 @@ class SnakeGame(commands.Cog):
         """Play a snake game on discord!"""
 
         # TODO: maybe non square game sizes
-        print(size, type(size))
         x, y = size, size
-
-        # Size check
-        if abs(x * y) >= 200:
-            return await ctx.reply(':anger: Game size is too big!')
 
         game_instance = SnakeGameContainer(x, y)
         view = SnakeGameView(ctx=ctx, game_instance=game_instance)
-        view.message = message = await ctx.send('You have 15s to move!\n' + game_instance.render(), view=view)
+        render = game_instance.render()
+        view.message = message = await ctx.send(f'You have 15s to move!\n {render}', view=view)
         active_snake_games.update({message.id: view})
 
         # Cleanup
