@@ -72,11 +72,11 @@ class Neko(commands.Cog):
     }
     nsfw_img_entries = {'kiss', 'spank'}
     endpoint_entries = {
-        ('textcat', 'Get an image of type `cat`.'),
-        ('why', 'Get a cat kaomoji.'),
-        ('name', 'Why?'),
-        ('cat', 'Did you know...?'),
-        ('fact', 'Get a random name.'),
+        ('textcat', 'Get a cat kaomoji.'),
+        ('why', 'Why?'),
+        ('name', 'Get a random name.'),
+        ('cat', 'Get an image of type `cat`.'),
+        ('fact', 'Did you know...?'),
     }
 
     def __init__(self, client: MoistBot):
