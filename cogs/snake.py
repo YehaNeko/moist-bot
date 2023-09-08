@@ -72,8 +72,8 @@ class SnakeGameContainer:
 
     __slots__ = (
         'field_dim', 'field_area', 'empty_field', 'field', 'rendered_field',
-        'snake_head', 'snake_body', 'apple', 'game_score', 'alive', 'snake_body_len',
-        'perf_move_snake_begin', 'perf_move_snake_end', 'perf_render_begin', 'perf_render_end',
+        'snake_head', 'snake_body', 'apple', 'ate_apple', 'game_score', 'alive', 'snake_body_len',
+        'perf_move_snake_begin', 'perf_move_snake_end', 'perf_render_begin', 'perf_render_end'
     )
 
     assets: dict[str, np.unicode_] = {
@@ -124,6 +124,7 @@ class SnakeGameContainer:
         )
 
         # Game info
+        self.ate_apple: bool = False
         self.game_score: int = 0
         self.alive: bool = True
 
@@ -134,13 +135,21 @@ class SnakeGameContainer:
         self.perf_render_end: int = 0
 
     def _respawn_apple(self):
-        rand_idx = self.rng.integers(0, self.field_area, dtype='uint8')
+        """Respawn apple
+        note this is highly inefficient and flawed (oh well... uwu)
+        """
 
+        rand_idx = self.rng.integers(0, self.field_area, dtype='uint8')
         i = self.field_dim[1]
         x = rand_idx % i
         y = rand_idx // i
-
         self.apple[:] = (x, y)
+
+        while (
+            np.any(np.all(self.apple == self.snake_body[: self.snake_body_len], axis=1))
+            or np.array_equal(self.apple, self.snake_head)
+        ):
+            self._respawn_apple()
 
     def _move_snake(self, x: int, y: int) -> None:
         """Increment `self.snake_head` by `x` or `y`"""
@@ -152,18 +161,8 @@ class SnakeGameContainer:
 
         # If the snake is about to eat an apple
         if np.array_equal(self.snake_head, self.apple):
-            self.game_score += 1
-            self.snake_body_len += 1
-
-            # Respawn apple
-            # note this is highly inefficient and flawed (oh well... uwu)
-            self._respawn_apple()
-            while (
-                np.any(np.all(self.apple == self.snake_body[: self.snake_body_len], axis=1))
-                or np.array_equal(self.apple, self.snake_head)
-            ):
-                self._respawn_apple()
-
+            self.ate_apple = True
+            self.snake_body_len += 1  # I hate how this has to be here
         else:
             # If the snake didn't eat an apple
             # remove the last snake body
@@ -180,6 +179,12 @@ class SnakeGameContainer:
         if self.snake_body_len + 1 == self.field_area:
             self.win_game()
             return
+
+        # Respawn apple
+        if self.ate_apple:
+            self.ate_apple = False
+            self.game_score += 1
+            self._respawn_apple()
 
         # Game over conditions
         if (
