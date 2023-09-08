@@ -51,7 +51,7 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.CommandOnCooldown):
             seconds = round(error.retry_after)
-            await ctx.reply(
+            return await ctx.reply(
                 f':warning: You are on cooldown. Try again in {seconds} seconds.',
                 delete_after=seconds + 1,
                 ephemeral=True
@@ -63,15 +63,15 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
-                await ctx.author.send(f':no_entry_sign: `{ctx.command}` can\'t be used in Private Messages.')
+                return await ctx.author.send(f':no_entry_sign: `{ctx.command}` can\'t be used in Private Messages.')
             except discord.HTTPException:
                 pass
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.reply(f':warning: Missing required parameter `{error.param.name}`.', ephemeral=True)
+            return await ctx.reply(f':warning: Missing required parameter `{error.param.name}`.', ephemeral=True)
 
         elif isinstance(error, commands.MemberNotFound):
-            await ctx.reply(f':warning: Member `{error.argument}` not found.', ephemeral=True)
+            return await ctx.reply(f':warning: Member `{error.argument}` not found.', ephemeral=True)
 
         elif isinstance(error, commands.BadLiteralArgument):
             literals = error.literals
@@ -95,7 +95,7 @@ class ErrorHandler(commands.Cog):
         elif isinstance(error, commands.CheckFailure):
             if str(error):
                 return await ctx.reply(f':warning: {str(error)}', ephemeral=True)
-            await ctx.reply(":warning: You are unable to run this command.", ephemeral=True)
+            return await ctx.reply(":warning: You are unable to run this command.", ephemeral=True)
 
         elif isinstance(error, AsyncPrawcoreException):
             return await ctx.reply(':anger: I cannot find that subreddit D:', ephemeral=True)
@@ -106,7 +106,7 @@ class ErrorHandler(commands.Cog):
                 f'Error in guild \'{ctx.guild}\', triggered by {ctx.author}, with command \'{ctx.command}\'\n',
                 exc_info=error,
             )
-            await ctx.reply(f':anger: Command raised unhandled error:\n`{error}`', ephemeral=True)
+            return await ctx.reply(f':anger: Command raised unhandled error:\n`{error}`', ephemeral=True)
 
 
 async def setup(client):
