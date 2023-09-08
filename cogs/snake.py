@@ -77,7 +77,7 @@ class SnakeGameContainer:
     )
 
     assets: dict[str, np.unicode_] = {
-        'empty': '🟪',
+        'empty': '⬛',
         'apple': '🟥',
         'snake_head': '🟢',
         'snake_body': '🟩',
@@ -177,7 +177,7 @@ class SnakeGameContainer:
 
         # Win condition
         if self.snake_body_len + 1 == self.field_area:
-            self.win_game()
+            self.game_win()
             return
 
         # Respawn apple
@@ -230,7 +230,7 @@ class SnakeGameContainer:
         """
         self.alive = False
 
-    def win_game(self) -> None:
+    def game_win(self) -> None:
         """This is called when the player reaches the max size.
         """
         # TODO: make event
@@ -252,20 +252,23 @@ labels = {
 class SnakeGameView(discord.ui.View):
     def __init__(
         self,
-        *,
-        ctx: commands.Context,
+        ctx: Context,
         game_instance: SnakeGameContainer,
+        *,
+        embed: discord.Embed,
         message: Optional[discord.Message] = None,
         timeout: Optional[float] = 15,
     ):
         super().__init__(timeout=timeout)
-        self.ctx: commands.Context = ctx
+        self.ctx: Context = ctx
+        self.embed: discord.Embed = embed
         self.message: discord.Message = message
         self.game_instance: SnakeGameContainer = game_instance
         self.opposite_button: Optional[discord.ui.Button] = None
         self.last_opposite_button: Optional[discord.ui.Button] = None
-        self._i_check: int = 0
 
+        self._perf_i_check: int = 0
+        self.perf_await_api_begin: int = 0
         if self.game_instance.perf_timing:
             author = self.ctx.author
             guild = self.ctx.guild
@@ -277,14 +280,14 @@ class SnakeGameView(discord.ui.View):
             )
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        self._i_check = time.perf_counter_ns()
+        self._perf_i_check = time.perf_counter_ns()
         if interaction.user and interaction.user.id == self.ctx.author.id:
             return True
-        else:
-            await interaction.response.send_message(
-                'This game button is not for you.', ephemeral=True
-            )
-            return False
+
+        await interaction.response.send_message(
+            'This game button is not for you.', ephemeral=True
+        )
+        return False
 
     async def on_error(self, interaction: discord.Interaction, error: Any, item: Any) -> None:
         logger.exception('Ignoring exception in view %r for item %r', self, item)
@@ -293,11 +296,31 @@ class SnakeGameView(discord.ui.View):
     async def on_timeout(self) -> None:
         await self._on_game_over('Took too long to move!')
 
+    def _perf_log(self):
+        perf_end = time.perf_counter_ns()
+        author = self.ctx.author
+        guild = self.ctx.guild
+        g = self.game_instance
+
+        logger.info(
+            GAME_INTERACTION_LOG,
+            author, author.id,
+            *(guild.name, guild.id) if guild else ('None', 'DMs'),
+            (a := g.perf_move_snake_end - g.perf_move_snake_begin) / 1_000_000,
+            (b := g.perf_render_end - g.perf_render_begin) / 1_000_000,
+            (c := a + b) / 1_000_000, round(10**9 / c),
+            (perf_end - self.perf_await_api_begin) / 1_000_000,
+            (perf_end - self._perf_i_check) / 1_000_000
+        )
+
     async def _on_game_over(self, message: str = 'You died!') -> None:
         """Function for when the game has ended"""
+        self.embed.description = self.game_instance.rendered_field
+        self.embed.colour = discord.Color.dark_red()
+
         await self.message.edit(
-            content=self.game_instance.rendered_field
-            + f'\n{message} Final score: {self.game_instance.game_score}',
+            content=f'\n{message} Final score: {self.game_instance.game_score}',
+            embed=self.embed,
             view=None,
         )
         self.stop()
@@ -363,30 +386,19 @@ class SnakeGameView(discord.ui.View):
         # Move
         self.game_instance.move_snake(**kwargs)
 
+        # Set performance counter pre message edit
+        self.perf_await_api_begin = time.perf_counter_ns()
+
         # Edit original message to the updated game state
-        perf_await_api_begin = time.perf_counter_ns()
         if self.game_instance.alive:
-            await self.message.edit(content=self.game_instance.render(), view=self)
+            self.embed.description = self.game_instance.render()
+            await self.message.edit(embed=self.embed, view=self)
         else:
             await self._on_game_over()
 
         # Log perf timings
-        perf_end = time.perf_counter_ns()
-        if (g := self.game_instance).perf_timing:
-            author = self.ctx.author
-            guild = self.ctx.guild
-
-            logger.info(
-                GAME_INTERACTION_LOG,
-                author, author.id,
-                *(guild.name, guild.id) if guild else ('None', 'DMs'),
-                (a := g.perf_move_snake_end - g.perf_move_snake_begin) / 1_000_000,
-                (b := g.perf_render_end - g.perf_render_begin) / 1_000_000,
-                (c := a + b) / 1_000_000, round(10**9 / c),
-                (perf_end - perf_await_api_begin) / 1_000_000,
-                (perf_end - self._i_check) / 1_000_000
-            )
-            # TODO: holy shit this is absolute spaghetti code
+        if self.game_instance.perf_timing:
+            self._perf_log()
 
 
 active_snake_games: dict[int, SnakeGameView] = {}
@@ -400,22 +412,26 @@ class SnakeGame(commands.Cog):
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @app_commands.choices(
         size=[
+            app_commands.Choice(name='5x5', value=5),
             app_commands.Choice(name='6x6', value=6),
             app_commands.Choice(name='8x8', value=8),
             app_commands.Choice(name='10x10', value=10),
             app_commands.Choice(name='13x13', value=13)
         ]
     )
-    async def snake(self, ctx: Context, size: Literal[6, 8, 10, 13] = 10):
+    async def snake(self, ctx: Context, size: Literal[5, 6, 8, 10, 13] = 10):
         """Play a snake game on discord!"""
 
         # TODO: maybe non square game sizes
         x, y = size, size
 
         game_instance = SnakeGameContainer(x, y)
-        view = SnakeGameView(ctx=ctx, game_instance=game_instance)
-        render = game_instance.render()
-        view.message = message = await ctx.send(f'You have 15s to move!\n {render}', view=view)
+
+        embed = discord.Embed(description=game_instance.render(), color=discord.Color.green())
+        embed.set_author(name=f'{ctx.author.display_name}\'s snake game', icon_url=ctx.author.display_avatar)
+
+        view = SnakeGameView(ctx, game_instance, embed=embed, timeout=60)
+        view.message = message = await ctx.send(f'You have 60s to move!', embed=embed, view=view)
         active_snake_games.update({message.id: view})
 
         # Cleanup
