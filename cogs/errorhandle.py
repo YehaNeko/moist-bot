@@ -37,6 +37,7 @@ class ErrorHandler(commands.Cog):
         #         return
 
         ignored = (
+            commands.DisabledCommand,
             commands.CommandNotFound,
             commands.NotOwner,
             FileTooBig,
@@ -61,9 +62,9 @@ class ErrorHandler(commands.Cog):
                 ephemeral=True
             )
 
-        elif isinstance(error, commands.DisabledCommand):
-            # await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.', ephemeral=True)
-            return
+        # elif isinstance(error, commands.DisabledCommand):
+        #     await ctx.reply(f':no_entry_sign: `{ctx.command}` has been disabled.', ephemeral=True)
+        #     return
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
