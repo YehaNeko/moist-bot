@@ -3,15 +3,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, Literal, Iterator
 from contextlib import contextmanager
 from numpy.random import default_rng
+from datetime import timedelta
 from inspect import cleandoc
 from functools import wraps
 import numpy as np
 import logging
 import time
 
-import discord
-from discord import app_commands
 from discord.ext import commands
+from discord import app_commands
+import discord.utils
+import discord
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -391,8 +393,11 @@ class SnakeGameView(discord.ui.View):
 
         # Edit original message to the updated game state
         if self.game_instance.alive:
+            tm_in = discord.utils.utcnow() + timedelta(seconds=self.timeout)
+            tm_fmt = discord.utils.format_dt(tm_in, 'R')
+
             self.embed.description = self.game_instance.render()
-            await self.message.edit(embed=self.embed, view=self)
+            await self.message.edit(content=f'AFK-quit {tm_fmt}.', embed=self.embed, view=self)
         else:
             await self._on_game_over()
 
@@ -425,13 +430,17 @@ class SnakeGame(commands.Cog):
         # TODO: maybe non square game sizes
         x, y = size, size
 
+        timeout = 60
+        tm_in = discord.utils.utcnow() + timedelta(seconds=timeout)
+        tm_fmt = discord.utils.format_dt(tm_in, 'R')
+
         game_instance = SnakeGameContainer(x, y)
 
         embed = discord.Embed(description=game_instance.render(), color=discord.Color.green())
         embed.set_author(name=f'{ctx.author.display_name}\'s snake game', icon_url=ctx.author.display_avatar)
 
-        view = SnakeGameView(ctx, game_instance, embed=embed, timeout=60)
-        view.message = message = await ctx.send(f'You have 60s to move!', embed=embed, view=view)
+        view = SnakeGameView(ctx, game_instance, embed=embed, timeout=timeout)
+        view.message = message = await ctx.send(f'AFK-quit {tm_fmt}.', embed=embed, view=view)
         active_snake_games.update({message.id: view})
 
         # Cleanup
