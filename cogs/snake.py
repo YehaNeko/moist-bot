@@ -165,6 +165,7 @@ class SnakeGameContainer:
         if np.array_equal(self.snake_head, self.apple):
             self.ate_apple = True
             self.snake_body_len += 1  # I hate how this has to be here
+            self.game_score += 1
         else:
             # If the snake didn't eat an apple
             # remove the last snake body
@@ -185,7 +186,6 @@ class SnakeGameContainer:
         # Respawn apple
         if self.ate_apple:
             self.ate_apple = False
-            self.game_score += 1
             self._respawn_apple()
 
         # Game over conditions
