@@ -11,6 +11,7 @@ from logging.handlers import RotatingFileHandler
 import os
 import asyncio
 from datetime import datetime
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -42,8 +43,9 @@ class MoistBot(commands.Bot):
         super().__init__(
             allowed_mentions=allowed_mentions,
             command_prefix=_get_prefix,  # type: ignore
+            enable_debug_events=True,
             case_insensitive=True,
-            intents=intents
+            intents=intents,
         )
         self.started_at: Optional[datetime] = None
         self.synced: bool = True
@@ -61,6 +63,17 @@ class MoistBot(commands.Bot):
 
     async def get_context(self, origin: Message | Interaction, /, *, cls: Context = Context) -> Context:
         return await super().get_context(origin, cls=cls)  # type: ignore
+
+    async def process_commands(self, message: Message, /) -> None:
+        if message.author.bot:
+            return
+
+        ctx: Context = await self.get_context(message)
+
+        if ctx.command is not None:
+            logger.debug(f'Command in guild \'{ctx.guild}\', by {ctx.author}, with command \'{ctx.command}\'\n')
+
+        await self.invoke(ctx)
 
     async def on_ready(self):
         guilds = len(self.guilds)
@@ -84,25 +97,45 @@ client = MoistBot()
 # Prevent multiple bot logins
 if __name__ == '__main__':
 
-    # Setup file logging
-    max_bytes = 32 * 1024 * 1024  # 32 MiB
-    dt_fmt = '%Y-%m-%d %H:%M:%S'
-    file_handler = RotatingFileHandler(
-        filename='discord.log',
-        encoding='utf-8',
-        mode='w',
-        maxBytes=max_bytes,
-        backupCount=356
-    )
-    file_handler.setFormatter(logging.Formatter(
-        '[{asctime}] [{levelname:<8}] {name}: {message}',
-        dt_fmt,
-        style='{')
-    )
+    @contextmanager
+    def setup_logging():
+        log = logging.getLogger()
+    
+        try:
+            discord.utils.setup_logging(level=logging.DEBUG)
+            # __enter__
+            logging.getLogger('discord').setLevel(logging.INFO)
+            logging.getLogger('discord.http').setLevel(logging.WARNING)
+            logging.getLogger('discord.gateway').setLevel(logging.DEBUG)
+            # logging.getLogger('discord.state').addFilter(RemoveNoise())
 
-    file_logger = logging.getLogger('discord')
-    file_logger.setLevel(logging.DEBUG)
-    file_logger.addHandler(file_handler)
+            # Set stream handlers to INFO level
+            for handler in log.handlers:
+                if isinstance(handler, logging.StreamHandler):
+                    handler.setLevel(logging.INFO)
+
+            # Setup file logging
+            max_bytes = 32 * 1024 * 1024  # 32 MiB
+            dt_fmt = '%Y-%m-%d %H:%M:%S'
+            fmt = '[{asctime}] [{levelname:<8}] {name}: {message}'
+
+            file_handler = RotatingFileHandler(
+                filename='discord.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=356
+            )
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(
+                logging.Formatter(fmt, dt_fmt, style='{')
+            )
+            log.addHandler(file_handler)
+    
+            yield
+        finally:
+            # __exit__
+            handlers = log.handlers[:]
+            for handler in handlers:
+                handler.close()
+                log.removeHandler(handler)
 
     # Run bot
-    client.run(TOKEN)
+    with setup_logging():
+        client.run(TOKEN, log_handler=None)
