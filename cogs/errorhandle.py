@@ -3,15 +3,16 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 
-# Custom errors
-from cogs.mp3 import FileTooBig
-from asyncprawcore.exceptions import AsyncPrawcoreException
-
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from utils.context import Context
+
+# Custom errors
+from cogs.mp3 import FileTooBig
+from asyncprawcore.exceptions import AsyncPrawcoreException
 
 
 logger = logging.getLogger('discord.' + __name__)
@@ -51,9 +52,12 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.CommandOnCooldown):
             seconds = round(error.retry_after)
+            tm_in = discord.utils.utcnow() + timedelta(seconds=seconds)
+            tm_fmt = discord.utils.format_dt(tm_in, 'R')
+
             return await ctx.reply(
-                f':warning: You are on cooldown. Try again in {seconds} seconds.',
-                delete_after=seconds + 1,
+                f':warning: You are on cooldown. Try again {tm_fmt}.',
+                delete_after=seconds,
                 ephemeral=True
             )
 
