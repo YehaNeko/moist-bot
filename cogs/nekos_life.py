@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import discord
-from discord.utils import escape_mentions
 from discord.ext import commands
+from discord.utils import escape_mentions
 
 import nekos
 from typing import TYPE_CHECKING, Optional
@@ -10,6 +10,31 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from main import MoistBot
     from utils.context import Context
+
+
+class MediaEmbed(discord.Embed):
+    def __init__(self, ctx: Context, url: str, **kwargs):
+        command = ctx.command.name.replace('_', ' ')
+        author = ctx.author
+
+        super().__init__(
+            color=author.accent_color or author.color,
+            **kwargs
+        )
+
+        user = ctx.args[1]
+        print(ctx.kwargs, user, sep='\n')
+        if user is not None:
+            fmt = f'{author.display_name} sends {command}s to {user.display_name}!'
+        else:
+            fmt = f'{author.display_name}\'s {command}'
+
+        self.set_author(
+            icon_url=author.display_avatar,
+            name=fmt,
+        ).set_image(
+            url=url
+        )
 
 
 # The predicate taken from `commands.is_nsfw()`
@@ -22,26 +47,28 @@ def is_nsfw(ctx: Context) -> bool:
     raise commands.NSFWChannelRequired(ch)
 
 
-async def _neko_callback(ctx: Context, *args, func_name: Optional[str] = None) -> None:
+async def _get_data(ctx: Context, *args, func_name: Optional[str] = None) -> str:
     """Generic callback for `neko` command."""
     if func_name is not None:
         cmd = func_name
-        args = (ctx.command.name,)
+        args = (ctx.command.name, )
     else:
         cmd = ctx.command.name
 
     data = await ctx.bot.loop.run_in_executor(None, getattr(nekos, cmd), *args)
-    await ctx.reply(data)
+    return data
 
 
-async def _neko_img_callback(ctx: Context):
+async def _neko_img_callback(ctx: Context, user: Optional[discord.Member] = None):
     """Generic callback for `nekos.img()` function."""
-    await _neko_callback(ctx, func_name='img')
+    url = await _get_data(ctx, func_name='img')
+    await ctx.reply(embed=MediaEmbed(ctx, url))
 
 
 async def _neko_endpoint_callback(ctx: Context):
-    """Generic callback for `nekos.img()` function."""
-    await _neko_callback(ctx)
+    """Generic callback for `nekos` functions."""
+    data = await _get_data(ctx)
+    await ctx.reply(data)
 
 
 class Neko(commands.Cog):
@@ -68,14 +95,14 @@ class Neko(commands.Cog):
         'smug',
         'goose',
         'woof',
-        # 'lewd' Provides 1 image
+        # 'lewd'  # Unused
     }
     nsfw_img_entries = {'kiss', 'spank'}
     endpoint_entries = {
         ('textcat', 'Get a cat kaomoji.'),
         ('why', 'Why?'),
         ('name', 'Get a random name.'),
-        ('cat', 'Get an image of type `cat`.'),
+        ('cat', 'Meow.'),
         ('fact', 'Did you know...?'),
     }
 
@@ -124,12 +151,14 @@ class Neko(commands.Cog):
     @neko.command()
     async def owoify(self, ctx: Context, *, text: str):
         """Input text to be owofied!"""
-        await _neko_callback(ctx, escape_mentions(text))
+        data = await _get_data(ctx, escape_mentions(text))
+        await ctx.reply(data)
 
     @neko.command()
     async def spoiler(self, ctx: Context, *, text: str):
         """Input text to be spoiled per letter!"""
-        await _neko_callback(ctx, escape_mentions(text))
+        data = await _get_data(ctx, escape_mentions(text))
+        await ctx.reply(data)
 
 
 async def setup(client: MoistBot):
