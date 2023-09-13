@@ -24,6 +24,7 @@ class OwnerOnly(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
         self.last_ext = 'cmds'
+        self.last_ext: str = 'cmds'
 
     async def cog_check(self, ctx: Context) -> bool:
         if not await ctx.bot.is_owner(ctx.author):
@@ -43,12 +44,12 @@ class OwnerOnly(commands.Cog):
             await self.client.reload_extension(f'cogs.{ext}')
 
         except (commands.ExtensionNotLoaded, commands.ExtensionNotFound):
-            await ctx.reply(":anger: specified cog name doesn't exits bozo")
+            return await ctx.reply(":anger: specified cog name doesn't exits bozo")
 
         except commands.ExtensionFailed as e:
             msg = f'Reloading raised an exception: `{type(e.__class__)}`\n'
             logger.exception(msg, exc_info=e.__traceback__)
-            await ctx.reply(f':anger: {msg}\n`{e}`')
+            return await ctx.reply(f':anger: {msg}\n`{e}`')
 
         await ctx.reply(f':repeat: Reloaded {ext}.')
         self.last_ext = ext
@@ -62,12 +63,12 @@ class OwnerOnly(commands.Cog):
             await self.client.load_extension(f'cogs.{ext}')
 
         except (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound):
-            await ctx.reply(":anger: specified cog is already loaded or doesn't exits bozo")
+            return await ctx.reply(":anger: specified cog is already loaded or doesn't exits bozo")
 
         except commands.ExtensionFailed as e:
             msg = f'Loading raised an exception: `{type(e.__class__)}`\n'
             logger.exception(msg, exc_info=e.__traceback__)
-            await ctx.reply(f':anger: {msg}\n`{e}`')
+            return await ctx.reply(f':anger: {msg}\n`{e}`')
 
         await ctx.reply(f':white_check_mark: Loaded {ext}.')
 
@@ -79,7 +80,7 @@ class OwnerOnly(commands.Cog):
         try:
             await self.client.unload_extension(f'cogs.{ext}')
         except (commands.ExtensionNotFound, commands.ExtensionNotLoaded):
-            await ctx.reply(":anger: specified cog name doesn't exits bozo")
+            return await ctx.reply(":anger: specified cog name doesn't exits bozo")
 
         await ctx.reply(f':white_check_mark: Unloaded {ext}.')
 
