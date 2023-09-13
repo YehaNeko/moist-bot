@@ -37,16 +37,6 @@ class MediaEmbed(discord.Embed):
         )
 
 
-# The predicate taken from `commands.is_nsfw()`
-def is_nsfw(ctx: Context) -> bool:
-    ch = ctx.channel
-    if ctx.guild is None or (
-        isinstance(ch, (discord.TextChannel, discord.Thread, discord.VoiceChannel)) and ch.is_nsfw()
-    ):
-        return True
-    raise commands.NSFWChannelRequired(ch)
-
-
 async def _get_data(ctx: Context, *args, func_name: Optional[str] = None) -> str:
     """Generic callback for `neko` command."""
     if func_name is not None:
@@ -128,7 +118,7 @@ class Neko(commands.Cog):
                     _neko_img_callback,
                     name=e,
                     cog=self,
-                    checks=[is_nsfw],
+                    checks=[commands.is_nsfw().predicate],
                     brief=f'Get an image of type `{e}`.\n **NSFW only.**',
                 )
             )
