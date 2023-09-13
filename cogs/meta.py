@@ -279,7 +279,7 @@ class PaginatedHelpCommand(commands.HelpCommand):
         # No pagination necessary for a single command.
         embed = discord.Embed(colour=discord.Colour(0xA8B9CD))
         self.common_command_formatting(embed, command)
-        await self.context.send(embed=embed)
+        await self.context.reply(embed=embed)
 
     async def send_group_help(self, group):
         subcommands = group.commands
@@ -315,11 +315,6 @@ class Meta(commands.Cog):
     async def cog_command_error(self, ctx: Context, error: commands.CommandError):
         if isinstance(error, commands.BadArgument):
             await ctx.reply(str(error))
-
-    @commands.command(hidden=True)
-    async def hello(self, ctx: Context):
-        """Displays my intro message."""
-        await ctx.reply("Hello! I'm a robot! Danny#0007 made me.")
 
     @commands.command()
     async def charinfo(self, ctx: Context, *, characters: str):

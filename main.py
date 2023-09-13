@@ -42,6 +42,7 @@ class MoistBot(commands.Bot):
         )
         super().__init__(
             allowed_mentions=allowed_mentions,
+            help_attrs=dict(hidden=True),
             command_prefix=_get_prefix,  # type: ignore
             enable_debug_events=True,
             case_insensitive=True,
