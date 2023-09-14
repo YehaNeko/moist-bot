@@ -24,12 +24,30 @@ class OwnerOnly(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
         self.last_ext = 'cmds'
+        self._last_result: Optional[Any] = None
+        self.sessions: set[int] = set()
         self.last_ext: str = 'cmds'
 
     async def cog_check(self, ctx: Context) -> bool:
         if not await ctx.bot.is_owner(ctx.author):
             raise commands.NotOwner('You do not own this bot.')
         return True
+
+    @staticmethod
+    def cleanup_code(content: str) -> str:
+        """Automatically removes code blocks from the code."""
+        # remove ```py\n```
+        if content.startswith('```') and content.endswith('```'):
+            return '\n'.join(content.split('\n')[1:-1])
+
+        # remove `foo`
+        return content.strip('` \n')
+
+    @staticmethod
+    def get_syntax_error(e: SyntaxError) -> str:
+        if e.text is None:
+            return f'```py\n{e.__class__.__name__}: {e}\n```'
+        return f'```py\n{e.text}{"^":>{e.offset}}\n{e.__class__.__name__}: {e}```'
 
     @commands.is_owner()
     @commands.command(hidden=True)
