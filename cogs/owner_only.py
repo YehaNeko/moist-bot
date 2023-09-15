@@ -30,7 +30,6 @@ class OwnerOnly(commands.Cog):
 
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
-        self.last_ext = 'cmds'
         self._last_result: Optional[Any] = None
         self.sessions: set[int] = set()
         self.last_ext: str = 'cmds'
@@ -74,7 +73,8 @@ class OwnerOnly(commands.Cog):
         except commands.ExtensionFailed as e:
             msg = f'Reloading raised an exception: `{type(e.__class__)}`\n'
             logger.exception(msg, exc_info=e.__traceback__)
-            return await ctx.reply(f':anger: {msg}\n`{e}`')
+            await ctx.reply(f':anger: {msg}\n`{e}`')
+            return
 
         await ctx.reply(f':repeat: Reloaded {ext}.')
         self.last_ext = ext
@@ -88,12 +88,14 @@ class OwnerOnly(commands.Cog):
             await self.client.load_extension(f'cogs.{ext}')
 
         except (commands.ExtensionAlreadyLoaded, commands.ExtensionNotFound):
-            return await ctx.reply(":anger: specified cog is already loaded or doesn't exits bozo")
+            await ctx.reply(":anger: specified cog is already loaded or doesn't exits bozo")
+            return
 
         except commands.ExtensionFailed as e:
             msg = f'Loading raised an exception: `{type(e.__class__)}`\n'
             logger.exception(msg, exc_info=e.__traceback__)
-            return await ctx.reply(f':anger: {msg}\n`{e}`')
+            await ctx.reply(f':anger: {msg}\n`{e}`')
+            return
 
         await ctx.reply(f':white_check_mark: Loaded {ext}.')
 
@@ -105,7 +107,8 @@ class OwnerOnly(commands.Cog):
         try:
             await self.client.unload_extension(f'cogs.{ext}')
         except (commands.ExtensionNotFound, commands.ExtensionNotLoaded):
-            return await ctx.reply(":anger: specified cog name doesn't exits bozo")
+            await ctx.reply(":anger: specified cog name doesn't exits bozo")
+            return
 
         await ctx.reply(f':white_check_mark: Unloaded {ext}.')
 
@@ -124,7 +127,8 @@ class OwnerOnly(commands.Cog):
                 await self.client.tree.sync(guild=GUILD_OBJECT)
             except discord.DiscordException:
                 logger.exception('Unable to sync application commands.')
-                return await ctx.reply(':anger: Unable to sync application commands.')
+                await ctx.reply(':anger: Unable to sync application commands.')
+                return
 
             await ctx.invoke(self.sync_app_cmds, guild='guild')  # type: ignore
 
@@ -138,7 +142,8 @@ class OwnerOnly(commands.Cog):
                 await self.client.tree.sync()
             except discord.DiscordException:
                 logger.exception('Unable to sync application commands.')
-                return await ctx.reply(':anger: Unable to sync application commands.')
+                await ctx.reply(':anger: Unable to sync application commands.')
+                return
 
             await ctx.reply(f':white_check_mark: Unloaded and re-synced `{unloaded}`.')
         else:
@@ -161,7 +166,8 @@ class OwnerOnly(commands.Cog):
             synced = await self.client.tree.sync(guild=guild)
         except commands.CommandError:
             logger.exception('Unable to sync application commands.')
-            return await ctx.reply(':anger: Unable to sync application commands.')
+            await ctx.reply(':anger: Unable to sync application commands.')
+            return
 
         fmt = '\n'.join(repr(cmd) for cmd in synced) if synced else 'None'
         await ctx.reply(f':white_check_mark: Synced in **{place}**:\n`{fmt}`')
@@ -204,7 +210,8 @@ class OwnerOnly(commands.Cog):
         try:
             await member.add_roles(role)
         except discord.Forbidden:
-            return await ctx.reply(':no_entry: lol I dont have the perms for that xd')
+            await ctx.reply(':no_entry: lol I dont have the perms for that xd')
+            return
 
         await ctx.reply(f':white_check_mark: Successfully given role `{role.name}` to `{member}`')
 
