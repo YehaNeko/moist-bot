@@ -376,6 +376,14 @@ class SnakeGameView(discord.ui.View):
 
     @discord.ui.button(label=labels['quit'], style=discord.ButtonStyle.red, row=0)
     async def quit(self, interaction: discord.Interaction, button: discord.ui.Button):
+
+        # Confirm quit if the game score is over 2
+        if self.game_instance.game_score > 2:
+            await interaction.response.defer()
+            confirm = await self.ctx.prompt('Are you sure you want to quit?')
+            if not confirm:
+                return
+
         self.game_instance.alive = False
         await self._on_game_over(':x: You quit!')
 
@@ -430,7 +438,7 @@ class SnakeGameView(discord.ui.View):
             tm_fmt = discord.utils.format_dt(tm_in, 'R')
 
             self.embed.description = self.game_instance.render()
-            await self.message.edit(content=f'AFK-quit {tm_fmt}.', embed=self.embed, view=self)
+            await interaction.edit_original_response(content=f'AFK-quit {tm_fmt}.', embed=self.embed, view=self)
 
         elif self.game_instance.won:
             self.game_instance.render()
