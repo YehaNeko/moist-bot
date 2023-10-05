@@ -7,19 +7,20 @@ from discord.ext import commands, tasks
 from discord import app_commands, DMChannel, TextChannel
 from typing import TYPE_CHECKING, AsyncIterator, Annotated, Any, Union
 
+import json
 import logging
 import asyncpraw
 from asyncpraw import reddit
-from asyncprawcore.exceptions import AsyncPrawcoreException
-import json
 
 if TYPE_CHECKING:
     from main import MoistBot
+
 
 logger = logging.getLogger("discord." + __name__)
 INTERVAL_OVERRIDE = None
 
 # TODO: add bypass check
+
 
 class ResolveChannel(commands.Converter, app_commands.Transformer):
     """Resolves channel mentions (eg. '<#123456789101112>') | discord.abc.User -> TextChannel | DMChannel"""
@@ -56,7 +57,7 @@ class ResolveChannel(commands.Converter, app_commands.Transformer):
 
 class MockupDeletedRedditor(object):
     name, icon_img = "[deleted]", None
-deleted_redditor = MockupDeletedRedditor()
+deleted_redditor = MockupDeletedRedditor()  # noqa
 
 
 class RedditPostEmbed(discord.Embed):
@@ -83,7 +84,6 @@ class RedditPostTask(tasks.Loop):
         # self.add_exception_type(AsyncPrawcoreException, )
         self.error(self.on_error)
 
-
     async def send_post(self) -> None:
         """Callback func for tasks"""
 
@@ -104,8 +104,7 @@ class RedditPostTask(tasks.Loop):
 
         # Acquire redditor
         op: reddit.Redditor = submission.author
-        if op: await op.load()
-        else: op = deleted_redditor  # type: ignore
+        op = await op.load() if op else deleted_redditor
 
         # Send post
         await self.channel.send(embed=RedditPostEmbed(submission, op))
@@ -114,7 +113,6 @@ class RedditPostTask(tasks.Loop):
     async def on_error(self, *args: Any):
         exception: Exception = args[-1]
         logger.error('Unhandled exception in internal background task %r.', self.coro.__name__, exc_info=exception)
-        # print(json.dumps(self._current_submission.__dict__))
         logger.warning('The bellow submission caused an exception: \n%s', json.dumps(self._current_submission.__dict__))
 
 
@@ -206,7 +204,7 @@ class RedditAutoPost(commands.Cog):
         """Stop sending reddit posts in a channel"""
 
         # Ensure running task in selected channel
-        if not channel.id in self.running_tasks.keys():
+        if channel.id not in self.running_tasks.keys():
             await ctx.reply(":warning: I am not auto-posting in that channel!")
 
         self.running_tasks[channel.id].cancel()

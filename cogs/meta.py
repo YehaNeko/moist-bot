@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Any, Optional, Union, TYPE_CHECKING
 
 from discord.ext import commands, menus
-from .utils import formats, time
-from .utils.paginator import RoboPages
+from cogs.utils import formats, time
+from cogs.utils.paginator import RoboPages
 import discord
 from collections import Counter
 import asyncio
