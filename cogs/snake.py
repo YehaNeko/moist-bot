@@ -250,8 +250,8 @@ class SnakeGameContainer:
         # Guh
         self.assets['snake_body'].reset()
 
-        self.field[self.snake_head[1], self.snake_head[0]] = self.assets['snake_head']
         self.field[self.apple[1], self.apple[0]] = self.assets['apple']
+        self.field[self.snake_head[1], self.snake_head[0]] = self.assets['snake_head']
 
         with self._render() as r:
             return r
