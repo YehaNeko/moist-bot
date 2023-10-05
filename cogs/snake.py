@@ -69,6 +69,34 @@ def perf_timer(begin_out: str = '', end_out: str = ''):
     return inner
 
 
+class IterableRepeater:
+    """Infinitely returns the next element of any iterable."""
+    __slots__ = ('_items', '_item_generator')
+
+    def __init__(self, items: Iterable[Any]) -> None:
+        self._items = items
+        self._item_generator = self.gen_items()
+
+    @property
+    def item(self) -> Any:
+        return next(self._item_generator)
+
+    def gen_items(self) -> Generator[Any]:
+        items = self._items
+        while True:
+            for item in items:
+                yield item
+
+    def reset(self) -> None:
+        self._item_generator = self.gen_items()
+
+    def __iter__(self) -> Any:
+        return self.item
+
+    def __repr__(self) -> Any:
+        return self.item
+
+
 class SnakeGameContainer:
     """Container for a snake game holding the current game state and logic"""
 
@@ -78,11 +106,11 @@ class SnakeGameContainer:
         'perf_move_snake_begin', 'perf_move_snake_end', 'perf_render_begin', 'perf_render_end'
     )
 
-    assets: dict[str, np.unicode_] = {
+    assets: dict[str, np.unicode_ | IterableRepeater] = {
         'empty': '⬛',
         'apple': '🟥',
         'snake_head': '🟢',
-        'snake_body': '🟩',
+        'snake_body': IterableRepeater(('🟩', '🟨')),
     }
     rng = default_rng()
     empty_body = np.array((-1, -1), dtype='uint8')
@@ -217,6 +245,9 @@ class SnakeGameContainer:
 
         for obj in self.snake_body[: self.snake_body_len]:
             self.field[obj[1], obj[0]] = self.assets['snake_body']
+
+        # Guh
+        self.assets['snake_body'].reset()
 
         self.field[self.snake_head[1], self.snake_head[0]] = self.assets['snake_head']
         self.field[self.apple[1], self.apple[0]] = self.assets['apple']
