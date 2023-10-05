@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Literal, Iterator
+from typing import TYPE_CHECKING, Any, Optional, Literal
+from collections.abc import Iterator, Iterable, Generator
 from contextlib import contextmanager
 from numpy.random import default_rng
 from datetime import timedelta
@@ -102,7 +103,7 @@ class SnakeGameContainer:
 
     __slots__ = (
         'field_dim', 'field_area', 'empty_field', 'field', 'rendered_field',
-        'snake_head', 'snake_body', 'apple', 'ate_apple', 'game_score', 'alive', 'snake_body_len',
+        'snake_head', 'snake_body', 'apple', 'ate_apple', 'game_score', 'alive', 'snake_body_len', 'won',
         'perf_move_snake_begin', 'perf_move_snake_end', 'perf_render_begin', 'perf_render_end'
     )
 
@@ -157,6 +158,7 @@ class SnakeGameContainer:
         self.ate_apple: bool = False
         self.game_score: int = 0
         self.alive: bool = True
+        self.won: bool = False
 
         # Perf timings
         self.perf_move_snake_begin: int = 0
@@ -234,13 +236,12 @@ class SnakeGameContainer:
             self.rendered_field = '\n'.join(''.join(e) for e in self.field)
             yield self.rendered_field
         finally:
-            # We need to reset the field to its original form
-            # for future render passes
+            # Reset the field to it's empty form for future render passes
             self.field = self.empty_field.copy()
             self.perf_render_end = time.perf_counter_ns()
 
     def render(self) -> str:
-        """Add game objects and invoke ``self._render``"""
+        """Add game objects and invoke `self._render`"""
         self.perf_render_begin: int = time.perf_counter_ns()
 
         for obj in self.snake_body[: self.snake_body_len]:
@@ -264,12 +265,12 @@ class SnakeGameContainer:
         self.alive = False
 
     def game_win(self) -> None:
-        """This is called when the player reaches the max size.
-        """
+        """This is called when the player reaches the max size."""
         # TODO: make event
         if self.perf_timing:
             logger.info('Win')
 
+        self.won = True
         self.game_over()
 
 
@@ -324,10 +325,10 @@ class SnakeGameView(discord.ui.View):
 
     async def on_error(self, interaction: discord.Interaction, error: Any, item: Any) -> None:
         logger.exception('Ignoring exception in view %r for item %r', self, item)
-        await self._on_game_over('An unknown error occurred!')
+        await self._on_game_over(':warning: An unknown error occurred!')
 
     async def on_timeout(self) -> None:
-        await self._on_game_over('Took too long to move!')
+        await self._on_game_over(':hourglass: Took too long to move!')
 
     def _perf_log(self):
         perf_end = time.perf_counter_ns()
@@ -346,17 +347,18 @@ class SnakeGameView(discord.ui.View):
             (perf_end - self._perf_i_check) / 1_000_000
         )
 
-    async def _on_game_over(self, message: str = 'You died!') -> None:
+    async def _on_game_over(self, message: str = ':x: **You died!**') -> None:
         """Function for when the game has ended"""
         self.embed.description = self.game_instance.rendered_field
         self.embed.colour = discord.Color.dark_red()
 
         await self.message.edit(
-            content=f'\n{message} Final score: {self.game_instance.game_score}',
+            content=f'{message} Final score: {self.game_instance.game_score}',
             embed=self.embed,
             view=None,
         )
         self.stop()
+
         if self.game_instance.perf_timing:
             logger.info(
                 'Interation \x1b[41;1mended\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m.',
@@ -375,7 +377,7 @@ class SnakeGameView(discord.ui.View):
     @discord.ui.button(label=labels['quit'], style=discord.ButtonStyle.red, row=0)
     async def quit(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.game_instance.alive = False
-        await self._on_game_over('You quit!')
+        await self._on_game_over(':x: You quit!')
 
     @discord.ui.button(label=labels['up'], style=discord.ButtonStyle.primary, row=0)
     async def up(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -429,6 +431,11 @@ class SnakeGameView(discord.ui.View):
 
             self.embed.description = self.game_instance.render()
             await self.message.edit(content=f'AFK-quit {tm_fmt}.', embed=self.embed, view=self)
+
+        elif self.game_instance.won:
+            self.game_instance.render()
+            await self._on_game_over(':crown: **You won!**')
+
         else:
             await self._on_game_over()
 
@@ -490,7 +497,7 @@ the game runs with keyboard controls
 (mostly used for debugging).
 """
 if __name__ == '__main__':
-    import keyboard
+    import keyboard  # noqa
 
     # Init
     game = SnakeGameContainer(20, 20)
