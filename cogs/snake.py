@@ -284,6 +284,8 @@ labels = {
 
 
 class SnakeGameView(discord.ui.View):
+    _tm_fmt: str
+
     def __init__(
         self,
         ctx: Context,
@@ -379,9 +381,12 @@ class SnakeGameView(discord.ui.View):
 
         # Confirm quit if the game score is over 2
         if self.game_instance.game_score > 2:
-            await interaction.response.defer()
+            button.disabled = True
+            await interaction.response.edit_message(embed=self.embed, view=self)
+
             confirm = await self.ctx.prompt('Are you sure you want to quit?')
             if not confirm:
+                button.disabled = False
                 return
 
         self.game_instance.alive = False
@@ -415,7 +420,6 @@ class SnakeGameView(discord.ui.View):
         """Callback function of every movement button.
         This handles updating the game and disabling buttons.
         """
-        await interaction.response.defer()
 
         # Disable opposite movement button so that
         # the snake can't move into itself
@@ -435,10 +439,10 @@ class SnakeGameView(discord.ui.View):
         # Edit original message to the updated game state
         if self.game_instance.alive:
             tm_in = discord.utils.utcnow() + timedelta(seconds=self.timeout)
-            tm_fmt = discord.utils.format_dt(tm_in, 'R')
+            self._tm_fmt = tm_fmt = discord.utils.format_dt(tm_in, 'R')
 
             self.embed.description = self.game_instance.render()
-            await interaction.edit_original_response(content=f'AFK-quit {tm_fmt}.', embed=self.embed, view=self)
+            await interaction.response.edit_message(content=f'AFK-quit {tm_fmt}.', embed=self.embed, view=self)
 
         elif self.game_instance.won:
             self.game_instance.render()
