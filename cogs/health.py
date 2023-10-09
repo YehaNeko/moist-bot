@@ -3,14 +3,14 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 
-from datetime import datetime
-import asyncio
 import psutil
-
+import asyncio
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from main import MoistBot
+    from cogs.utils.context import Context
 
 
 class Health(commands.Cog):
@@ -20,7 +20,7 @@ class Health(commands.Cog):
 
     @commands.command(hidden=True, name="health", aliases=["stats"])
     @commands.is_owner()
-    async def bothealth(self, ctx: commands.Context):
+    async def bothealth(self, ctx: Context):
         """Various bot health monitoring tools."""
 
         # I forgor💀 from where but I yoinked this somewhere from
@@ -58,7 +58,7 @@ class Health(commands.Cog):
                   f'{memory_usage:.2f} MiB',
             inline=False)
 
-        global_rate_limit = not self.bot.http._global_over.is_set()
+        global_rate_limit = not self.bot.http._global_over.is_set()  # noqa
         description.append(f'Global Rate Limit: {global_rate_limit}')
 
         if global_rate_limit:
@@ -68,5 +68,5 @@ class Health(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-async def setup(client):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(Health(client))

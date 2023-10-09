@@ -5,15 +5,16 @@ from config import REDDIT_APP
 from discord.utils import MISSING
 from discord.ext import commands, tasks
 from discord import app_commands, DMChannel, TextChannel
-from typing import TYPE_CHECKING, AsyncIterator, Annotated, Any, Union
 
 import json
 import logging
 import asyncpraw
 from asyncpraw import reddit
+from typing import TYPE_CHECKING, AsyncIterator, Annotated, Any, Union
 
 if TYPE_CHECKING:
     from main import MoistBot
+    from cogs.utils.context import Context
 
 
 logger = logging.getLogger("discord." + __name__)
@@ -25,7 +26,7 @@ INTERVAL_OVERRIDE = None
 class ResolveChannel(commands.Converter, app_commands.Transformer):
     """Resolves channel mentions (eg. '<#123456789101112>') | discord.abc.User -> TextChannel | DMChannel"""
 
-    async def convert(self, ctx: commands.Context, value: Any) -> TextChannel | DMChannel:
+    async def convert(self, ctx: Context, value: Any) -> TextChannel | DMChannel:
         """Called for commands.Command context"""
         try:
             channel = await commands.TextChannelConverter().convert(ctx, value)
@@ -57,6 +58,8 @@ class ResolveChannel(commands.Converter, app_commands.Transformer):
 
 class MockupDeletedRedditor(object):
     name, icon_img = "[deleted]", None
+
+
 deleted_redditor = MockupDeletedRedditor()  # noqa
 
 
@@ -151,7 +154,7 @@ class RedditAutoPost(commands.Cog):
     )
     async def auto_send_reddit(
         self,
-        ctx: commands.Context,
+        ctx: Context,
         subreddit_name: str,
         channel: Annotated[Union[DMChannel, TextChannel, discord.User], ResolveChannel],
         interval: float,
@@ -198,7 +201,7 @@ class RedditAutoPost(commands.Cog):
     @auto_send_reddit.command()
     async def stop(
         self,
-        ctx: commands.Context,
+        ctx: Context,
         channel: Annotated[Union[DMChannel, TextChannel, discord.User], ResolveChannel],
     ):
         """Stop sending reddit posts in a channel"""
@@ -223,5 +226,5 @@ class RedditAutoPost(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-async def setup(client: MoistBot):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(RedditAutoPost(client))

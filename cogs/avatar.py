@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import discord
 from discord.ext import commands
-from typing import TYPE_CHECKING, Annotated, Union
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from main import MoistBot
-    from utils.context import Context
+    from cogs.utils.context import Context
 
 
 class AvatarEmbed(discord.Embed):
@@ -27,7 +27,7 @@ class AvatarEmbed(discord.Embed):
 
 
 class Avatar(commands.Cog):
-    def __init__(self, client):
+    def __init__(self, client: MoistBot):
         self.client: MoistBot = client
 
     @property
@@ -36,15 +36,9 @@ class Avatar(commands.Cog):
 
     @commands.cooldown(rate=1, per=2, type=commands.BucketType.user)
     @commands.command()
-    async def avatar(
-        self,
-        ctx: commands.Context,
-        *,
-        user: Annotated[Union[discord.User, discord.Member], commands.MemberConverter] = commands.Author,
-    ):
+    async def avatar(self, ctx: Context, *, user: discord.Member = commands.Author):
         """Display a user's avatar."""
 
-        # user: discord.Member
         embeds: list[discord.Embed] = []
 
         # First embed with base avatar
@@ -63,5 +57,5 @@ class Avatar(commands.Cog):
         await ctx.reply(embeds=embeds)
 
 
-async def setup(client: MoistBot):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(Avatar(client))

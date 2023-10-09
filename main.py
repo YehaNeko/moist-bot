@@ -10,6 +10,7 @@ from logging.handlers import RotatingFileHandler
 
 import os
 import asyncio
+import aiohttp
 from datetime import datetime
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Optional
@@ -28,6 +29,8 @@ def _get_prefix(bot, message):
 
 
 class MoistBot(commands.Bot):
+    session = aiohttp.ClientSession
+
     def __init__(self):
         allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
         intents = discord.Intents(
@@ -60,6 +63,7 @@ class MoistBot(commands.Bot):
                     logger.exception(f'Failed to load extension {filename}\n')
 
     async def setup_hook(self):
+        self.session = aiohttp.ClientSession()
         await asyncio.create_task(self.load_cogs())
 
     async def get_context(self, origin: Message | Interaction, /, *, cls: Context = Context) -> Context:
@@ -75,6 +79,10 @@ class MoistBot(commands.Bot):
             logger.debug(f'Command in guild \'{ctx.guild}\', by {ctx.author}, with command \'{ctx.command}\'\n')
 
         await self.invoke(ctx)
+
+    async def close(self) -> None:
+        await super().close()
+        await self.session.close()
 
     async def on_ready(self):
         guilds = len(self.guilds)

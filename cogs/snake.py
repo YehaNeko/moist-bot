@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Literal
-from collections.abc import Iterator, Iterable, Generator
-from contextlib import contextmanager
-from numpy.random import default_rng
-from datetime import timedelta
-from inspect import cleandoc
-from functools import wraps
-import numpy as np
-import logging
-import time
-
+import discord
+import discord.utils
 from discord.ext import commands
 from discord import app_commands
-import discord.utils
-import discord
+
+import time
+import logging
+import numpy as np
+from functools import wraps
+from inspect import cleandoc
+from datetime import timedelta
+from numpy.random import default_rng
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Optional, Literal
+from collections.abc import Iterator, Iterable, Generator
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -114,7 +114,7 @@ class SnakeGameContainer:
         'snake_body': IterableRepeater(('🟩', '🟨')),
     }
     rng = default_rng()
-    empty_body = np.array((-1, -1), dtype='uint8')
+    empty_body = np.array((-1, -1), dtype='int8')
     perf_timing: bool = DO_PERF_TIMING
 
     def __init__(self, size_x: int = 10, size_y: int = 10):

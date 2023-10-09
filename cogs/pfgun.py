@@ -3,19 +3,22 @@ from __future__ import annotations
 import discord
 from discord.ext import commands
 
-from typing import Any, Callable, Union, Optional
-from typing_extensions import Self
-
-from itertools import chain
 from math import log10
+from itertools import chain
+from typing_extensions import Self
+from typing import TYPE_CHECKING, Union, Optional
 
 # Additional
-from cogs.pfgun_utils.CacheManager import cache_arg, get_params
 from cogs.pfgun_utils.dicts import *
+from cogs.pfgun_utils.CacheManager import cache_arg, get_params
+
+if TYPE_CHECKING:
+    from main import MoistBot
+    from cogs.utils.context import Context
 
 
 class PfGunEmbed(discord.Embed):
-    def __init__(self, ctx: commands.Context):
+    def __init__(self, ctx: Context):
         super().__init__(
             title='Damage ranges',
             url='https://youtu.be/dQw4w9WgXcQ',
@@ -37,8 +40,7 @@ class PfGunEmbed(discord.Embed):
             rpm: float = None  # type: ignore
 
     ) -> Self:
-        """Generate embed fields
-        """
+        """Generate embed fields"""
         r1 = close_range
         r2 = long_range
 
@@ -65,7 +67,7 @@ class PfGunEmbed(discord.Embed):
 
         ''' Command logic '''
         def calculate_range(shot: int, dmg_close: float, dmg_long: float) -> float:
-            """ Main function for calculating damage ranges """
+            """Main function for calculating damage ranges"""
             dmg_shot = float(shots_to_damage.get(int(shot)))
 
             # Calculate range
@@ -135,9 +137,8 @@ class PfGunEmbed(discord.Embed):
                 # break after reaching infinite range
                 elif studs_to_kill >= r2:
                     self.add_field(
-                        name= f'{s} shot',
-                        value=f'{prev_range_value} to **∞** studs'
-                              f'{add_ttk(rpm, s)}',
+                        name=f'{s} shot',
+                        value=f'{prev_range_value} to **∞** studs{add_ttk(rpm, s)}',
                         inline=False,
                     )
                     break
@@ -146,8 +147,7 @@ class PfGunEmbed(discord.Embed):
                 # if r1 < studs_to_kill < r2 or studs_to_kill == r1:
                 self.add_field(
                     name=f'{s} shot',
-                    value=f'{prev_range_value} to {remove_decimal(studs_to_kill)} studs'
-                          f'{add_ttk(rpm, s)}',
+                    value=f'{prev_range_value} to {remove_decimal(studs_to_kill)} studs{add_ttk(rpm, s)}',
                     inline=False,
                 )
                 prev_range_value = remove_decimal(studs_to_kill)
@@ -162,24 +162,13 @@ class PfGunEmbed(discord.Embed):
 
 
 class Pfgun(commands.Cog):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, client: MoistBot):
+        self.client: MoistBot = client
 
-    @staticmethod
-    async def get_user_id(ctx, user: Union[discord.Member, str]) -> str:
-        """ Returns string of ``user.id`` or ``ctx.author.id`` """
-
-        if user is not None and not isinstance(user, discord.Member):
-            user = await commands.MemberConverter().convert(ctx, user)
-        else:
-            user = ctx.author
-
-        return str(user.id)
-
-    @commands.group(brief='Phantom Forces damage range calculator.', invoke_without_command=True)
+    @commands.group(invoke_without_command=True)
     async def pfgun(
             self,
-            ctx: commands.Context,
+            ctx: Context,
             close_damage: str,
             long_damage: str,
             close_range: float,
@@ -187,11 +176,15 @@ class Pfgun(commands.Cog):
             multiplier: float = 1.0,
             rpm: Optional[float] = None  # type: ignore
     ):
-        """ Main command """
+        """Phantom Forces damage range calculator."""
 
-        embed = PfGunEmbed(ctx)\
-            .gen_embed(*ctx.args[2:])\
-            .set_footer(text=f"Multiplier: {multiplier}\tRPM: {rpm}")
+        embed = PfGunEmbed(
+            ctx
+        ).gen_embed(
+            *ctx.args[2:]
+        ).set_footer(
+            text=f"Multiplier: {multiplier}\tRPM: {rpm}"
+        )
         await ctx.reply(embed=embed)
 
         ''' Save to cache '''
@@ -199,21 +192,24 @@ class Pfgun(commands.Cog):
             cache_arg(ctx.args[1:])  # Args without command object
 
     @pfgun.command()
-    async def hp(self, ctx, user: Optional[Union[discord.Member, str]] = None):
-        """ Applies modifiers to parameters and invokes main command """
+    async def hp(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
+        """Applies modifiers to parameters and invokes main command"""
 
         ''' Load from cache '''
-        user = await self.get_user_id(ctx, user)
+        user = str(user.id)
         params = await get_params(user)
 
         # Update embed
-        embed = PfGunEmbed(ctx)\
-            .set_footer(text='Showing values for HP ammo type')
+        embed = PfGunEmbed(
+            ctx
+        ).set_footer(
+            text='Showing values for HP ammo type'
+        )
 
         # Apply modifiers
         params['close_damage'] = str(float(params['close_damage']) * 1.2)
         params['long_damage'] = str(round(float(params['long_damage']) * (5 / 6), 2))
-        params['close_range'] = 25.325*log10(params['close_range'])
+        params['close_range'] = 25.325 * log10(params['close_range'])
         params['long_range'] *= 0.9
 
         # Update embed
@@ -222,35 +218,43 @@ class Pfgun(commands.Cog):
         await ctx.reply(embed=embed)
 
     @pfgun.command()
-    async def ap(self, ctx, user: Optional[Union[discord.Member, str]] = None):
+    async def ap(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
         """ Applies modifiers to parameters and invokes main command """
 
         ''' Load from cache '''
-        user = await self.get_user_id(ctx, user)
+        user = str(user.id)
         params = await get_params(user)
 
         # Apply modifiers
         params['close_range'] *= 0.5
 
         # Update embed
-        embed = PfGunEmbed(ctx)\
-            .gen_embed(**params)\
-            .set_footer(text='Showing values for AP ammo type')
+        embed = PfGunEmbed(
+            ctx
+        ).gen_embed(
+            **params
+        ).set_footer(
+            text='Showing values for AP ammo type'
+        )
 
         await ctx.reply(embed=embed)
 
     @pfgun.command(aliases=['last', 'clean', 'prev', 'previous', 'unmod', 'unmodified'])
-    async def normal(self, ctx, user: Optional[Union[discord.Member, str]] = None):
+    async def normal(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
         """ Invokes main command without modifiers """
 
         ''' Load from cache '''
-        user = await self.get_user_id(ctx, user)
+        user = str(user.id)
         params = await get_params(user)
 
         # Update embed
-        embed = PfGunEmbed(ctx)\
-            .gen_embed(**params)\
-            .set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
+        embed = PfGunEmbed(
+            ctx
+        ).gen_embed(
+            **params
+        ).set_footer(
+            text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}"
+        )
 
         await ctx.reply(embed=embed)
 
@@ -273,17 +277,21 @@ class Pfgun(commands.Cog):
     #     cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
     @pfgun.command()
-    async def rpm(self, ctx, rpm: Union[int, float]):
-        """ Changes *rpm* parameter and invokes main command """
+    async def rpm(self, ctx: Context, rpm: Union[int, float]):
+        """Changes *rpm* parameter and invokes main command"""
         params = await get_params(str(ctx.author.id))
 
         # Apply modifiers
         params['rpm'] = rpm
 
         # Update embed
-        embed = PfGunEmbed(ctx)\
-            .gen_embed(**params)\
-            .set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
+        embed = PfGunEmbed(
+            ctx
+        ).gen_embed(
+            **params
+        ).set_footer(
+            text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}"
+        )
 
         await ctx.reply(embed=embed)
 
@@ -291,18 +299,21 @@ class Pfgun(commands.Cog):
         cache_arg(list(chain.from_iterable([[ctx], params.values()])))
 
     @pfgun.command(aliases=['m', 'multiplier'])
-    async def multi(self, ctx, multiplier: float):
-        """ Changes *multiplier* parameter and invokes main command
-        """
+    async def multi(self, ctx: Context, multiplier: float):
+        """Changes *multiplier* parameter and invokes main command"""
         params = await get_params(str(ctx.author.id))
 
         # Apply modifiers
         params['multiplier'] = multiplier
 
         # Update embed
-        embed = PfGunEmbed(ctx)\
-            .gen_embed(**params)\
-            .set_footer(text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}")
+        embed = PfGunEmbed(
+            ctx
+        ).gen_embed(
+            **params
+        ).set_footer(
+            text=f"Multiplier: {params['multiplier']}\tRPM: {params['rpm']}"
+        )
 
         await ctx.reply(embed=embed)
 
@@ -311,22 +322,26 @@ class Pfgun(commands.Cog):
 
     @pfgun.command(hidden=True)
     @commands.is_owner()
-    async def eval(self, ctx: commands.Context, *, code: str):
+    async def eval(self, ctx: Context, *, code: str):
         """Local eval command"""
         return_val = eval(code)
         await ctx.reply(':white_check_mark: Exec returned: `%s`' % return_val)
 
     @commands.command(name='ranges', brief='Info about damage')
-    async def gun_ranges(self, ctx):
-        """ Small command for showing damage needed for every shot to kill """
+    async def gun_ranges(self, ctx: Context):
+        """Small command for showing damage needed for every shot to kill"""
 
         ''' Create embed '''
-        embed = discord.Embed(title='Damage ranges', url='https://youtu.be/dQw4w9WgXcQ', color=0x00ff40)\
-        .set_author(
+        embed = discord.Embed(
+            title='Damage ranges',
+            url='https://youtu.be/dQw4w9WgXcQ',
+            color=0x00ff40
+        ).set_author(
             name='Requested by ' + ctx.author.display_name,
             icon_url=ctx.author.avatar.url,
-        )\
-        .set_footer(text='Values rounded to 2nd decimal place')
+        ).set_footer(
+            text='Values rounded to 2nd decimal place'
+        )
 
         ''' Command logic '''
         for s in range(1, len(shots_to_damage) + 1):
@@ -354,5 +369,5 @@ class Pfgun(commands.Cog):
         await ctx.reply(embed=embed)
 
 
-async def setup(client):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(Pfgun(client))

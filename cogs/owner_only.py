@@ -396,5 +396,5 @@ class OwnerOnly(commands.Cog):
                 await ctx.send(f'Unexpected error: `{e}`')
 
 
-async def setup(client: MoistBot):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(OwnerOnly(client))

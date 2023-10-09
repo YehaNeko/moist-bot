@@ -7,20 +7,21 @@ import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from utils.context import Context
-
 # Custom errors
 from cogs.mp3 import FileTooBig
 from asyncprawcore.exceptions import AsyncPrawcoreException
+
+if TYPE_CHECKING:
+    from main import MoistBot
+    from cogs.utils.context import Context
 
 
 logger = logging.getLogger('discord.' + __name__)
 
 
 class ErrorHandler(commands.Cog):
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, client: MoistBot):
+        self.client: MoistBot = client
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: Context, error: commands.CommandError):
@@ -114,8 +115,7 @@ class ErrorHandler(commands.Cog):
             return await ctx.reply(f':anger: Command raised unhandled error:\n`{error}`', ephemeral=True)
 
 
-async def setup(client):
+async def setup(client) -> None:
     await client.add_cog(ErrorHandler(client))
-
 
 # Modified from https://gist.github.com/EvieePy/7822af90858ef65012ea500bcecf1612

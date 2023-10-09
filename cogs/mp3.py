@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 import discord
 from discord.ext import commands
 
-from pytube import YouTube
 import pytube.exceptions
+from pytube import YouTube
 
 import io
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from main import MoistBot
+    from cogs.utils.context import Context
+
 
 logger = logging.getLogger('discord.' + __name__)
 
@@ -15,8 +23,8 @@ class FileTooBig(commands.CommandError):
 
 
 class Mp3(commands.Cog):
-    def __init__(self, client: discord.Client):
-        self.client = client
+    def __init__(self, client: MoistBot):
+        self.client: MoistBot = client
         self.execute = self.client.loop.run_in_executor
 
     @staticmethod
@@ -37,7 +45,7 @@ class Mp3(commands.Cog):
     @commands.command(hidden=True)
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @commands.is_owner()
-    async def mp3(self, ctx: commands.Context, *, url: str):
+    async def mp3(self, ctx: Context, *, url: str):
         """Youtube mp3 downloader"""
 
         async with ctx.typing():
@@ -68,5 +76,5 @@ class Mp3(commands.Cog):
             await ctx.reply("HTTP Error.")
 
 
-async def setup(client):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(Mp3(client))

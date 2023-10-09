@@ -1,19 +1,21 @@
 from __future__ import annotations
-from typing import Any, Optional, Union, TYPE_CHECKING
 
-from discord.ext import commands, menus
-from cogs.utils import formats, time
-from cogs.utils.paginator import RoboPages
 import discord
-from collections import Counter
+from cogs.utils import formats, time
+from discord.ext import commands, menus
+from cogs.utils.paginator import RoboPages
+
 import asyncio
-import unicodedata
 import inspect
 import itertools
+import unicodedata
+from collections import Counter
+
+from typing import Any, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from main import MoistBot
-    from utils.context import Context
+    from cogs.utils.context import Context
 
     GuildContext = "GuildContext"
     import datetime
@@ -686,5 +688,5 @@ class Meta(commands.Cog):
         await ctx.send("go")
 
 
-async def setup(bot: MoistBot):
+async def setup(bot: MoistBot) -> None:
     await bot.add_cog(Meta(bot))

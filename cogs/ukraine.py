@@ -157,5 +157,5 @@ class Ukraine(commands.Cog):
         self.executor.shutdown(wait=False)
 
 
-async def setup(client):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(Ukraine(client))

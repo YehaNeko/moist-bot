@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import discord
 from discord.ext import commands
-from typing import TYPE_CHECKING, Annotated, Optional, Union
 
 import io
 from PIL import Image
+from typing import TYPE_CHECKING, Optional
 from concurrent.futures import ProcessPoolExecutor
 
 if TYPE_CHECKING:
     from main import MoistBot
+    from cogs.utils.context import Context
 
 
 class AvatarEmbed(discord.Embed):
     def __init__(
         self,
-        user: Union[discord.User, discord.Member],
+        user: discord.User,
     ):
         super().__init__(
             type='image',
@@ -33,6 +34,9 @@ class LowQualityProfilePicture(commands.Cog):
         self.client: MoistBot = client
         self.executor = ProcessPoolExecutor()
         self.execute = self.client.loop.run_in_executor
+
+    async def cog_unload(self) -> None:
+        self.executor.shutdown(wait=False)
 
     @staticmethod
     def _get_buffer(img: bytes, lq_f: float = 1) -> io.BytesIO:
@@ -53,8 +57,8 @@ class LowQualityProfilePicture(commands.Cog):
     @commands.command()
     async def lqpfp(
         self,
-        ctx: commands.Context,
-        user: Annotated[Union[discord.User, discord.Member], commands.MemberConverter] = commands.Author,
+        ctx: Context,
+        user: discord.User = commands.Author,
         factor: Optional[float] = 1
     ):
         """Display a low quality version of a user's avatar."""
@@ -80,9 +84,6 @@ class LowQualityProfilePicture(commands.Cog):
                 img_buffer.close()
                 del img_buffer, avatar
 
-    async def cog_unload(self) -> None:
-        self.executor.shutdown(wait=False)
 
-
-async def setup(client: MoistBot):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(LowQualityProfilePicture(client))

@@ -4,16 +4,20 @@ import discord
 from discord.ext import commands
 from typing import TYPE_CHECKING, Optional
 
-from random import randint, choice
 import pyperclip
+from random import randint, choice
 pyperclip.determine_clipboard()
 
 if TYPE_CHECKING:
     from main import MoistBot
+    from cogs.utils.context import Context
 
 
 class Meow(commands.Cog):
-    words = r'nya~ meow mrow nyah~ mew mrooowww meoow mrrrp mrp meoww nyaaaaa~ :3 uwu owo tehe owu UwU OwO tehe rawr purr'
+    words = (
+        r'nya~ meow mrow nyah~ mew mrooowww meoow mrrrp mrp meoww nyaaaaa~ :3 uwu owo'
+        r' tehe owu UwU OwO tehe rawr purr'
+    )
     word_list = words.split(' ')
 
     def __init__(self, client: MoistBot):
@@ -21,7 +25,7 @@ class Meow(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=1, per=1, type=commands.BucketType.user)
-    async def meow(self, ctx: commands.Context, random_size: Optional[int]):
+    async def meow(self, ctx: Context, random_size: Optional[int]):
         """Generate a random meow"""
         random_size = random_size or randint(15, 130)
 
@@ -33,7 +37,7 @@ class Meow(commands.Cog):
         random_sentence = ' '.join(random_words)
 
         if len(random_sentence) > 2000:
-           return await ctx.reply(':warning: I can\'t meow that long >~<')
+            return await ctx.reply(':warning: I can\'t meow that long >~<')
 
         # Automatically copy the contents to the clipboard for bot owners :3
         if await self.client.is_owner(ctx.author):
@@ -42,5 +46,5 @@ class Meow(commands.Cog):
         await ctx.reply(random_sentence)
 
 
-async def setup(client: MoistBot):
+async def setup(client: MoistBot) -> None:
     await client.add_cog(Meow(client))
