@@ -25,18 +25,19 @@ class Pp(commands.Cog):
     async def pp(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
         """Measure your pp."""
 
+        # NOT RIGGED
+        size = randint(0, 30) if user.id not in self.rigged else randint(200, 500)
+        peepee = '8' + '='*size + 'D'
+
         embed = discord.Embed(
             color=discord.Color.magenta(),
         ).set_author(
-            name=user.display_name + "'s pp",
+            name=user.display_name + '\'s pp',
             icon_url=user.display_avatar.url
+        ).add_field(
+            name=f'{size}cm long',
+            value=peepee
         )
-
-        # NOT RIGGED
-        size = randint(0, 30) if user.id not in self.rigged else randint(200, 500)
-
-        peepee = "8" + "="*size + "D"
-        embed.add_field(name=f"{size}cm long", value=peepee)
 
         await ctx.reply(embed=embed)
 
