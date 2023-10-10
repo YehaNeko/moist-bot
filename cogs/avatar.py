@@ -47,8 +47,7 @@ class Avatar(commands.Cog):
         embeds.append(embed)
 
         # Second embed with guild avatar (if exists)
-        has_ga: bool = hasattr(user, 'guild_avatar') and user.guild_avatar
-        if has_ga:
+        if hasattr(user, 'guild_avatar') and user.guild_avatar:
             avatar_url = user.guild_avatar.url
             embed = AvatarEmbed(avatar_url, user, source='guild')
             embeds.append(embed)
