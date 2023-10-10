@@ -16,6 +16,11 @@ from yarl import URL
 from contextlib import redirect_stdout
 from typing import TYPE_CHECKING, Optional, Literal, Annotated, Any
 
+# Extra imports for eval command
+import math
+import time
+import datetime
+
 if TYPE_CHECKING:
     from main import MoistBot
     from utils.context import Context
