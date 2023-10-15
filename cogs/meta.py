@@ -226,6 +226,9 @@ class PaginatedHelpCommand(commands.HelpCommand):
 
             await ctx.reply(str(error.original))
 
+    async def send_error_message(self, error: str, /) -> None:
+        await self.context.reply(error)
+
     def get_command_signature(self, command: commands.Command) -> str:
         parent = command.full_parent_name
         if len(command.aliases) > 0:
