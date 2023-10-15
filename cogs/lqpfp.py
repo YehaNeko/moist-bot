@@ -39,8 +39,8 @@ class LowQualityProfilePicture(commands.Cog):
         self.executor.shutdown(wait=False)
 
     @staticmethod
-    def _get_buffer(img: bytes, lq_f: float = 1) -> io.BytesIO:
-        img = Image.open(io.BytesIO(img))
+    def _get_buffer(img_bytes: bytes, lq_f: float = 1) -> io.BytesIO:
+        img = Image.open(io.BytesIO(img_bytes))
 
         s, _ = org_size = img.size
         lq_size = round((15/100 * s) / lq_f) or 1
