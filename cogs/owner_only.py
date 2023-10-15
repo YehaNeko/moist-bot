@@ -7,6 +7,8 @@ from config import GUILD_OBJECT
 
 import io
 import os
+import sys
+import psutil
 import asyncio
 import inspect
 import logging
@@ -14,6 +16,8 @@ import textwrap
 import traceback
 from yarl import URL
 from contextlib import redirect_stdout
+from jishaku.modules import package_version
+from importlib.metadata import distribution, packages_distributions
 from typing import TYPE_CHECKING, Optional, Literal, Annotated, Any
 
 # Extra imports for eval command
@@ -36,6 +40,7 @@ class OwnerOnly(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
         self._last_result: Optional[Any] = None
+        self.process = psutil.Process()
         self.sessions: set[int] = set()
         self.last_ext: str = 'cmds'
 
@@ -399,6 +404,118 @@ class OwnerOnly(commands.Cog):
                 pass
             except discord.HTTPException as e:
                 await ctx.send(f'Unexpected error: `{e}`')
+
+    # noinspection PyArgumentEqualDefault, PyProtectedMember
+    @commands.command(name='health', aliases=['stats'])
+    @commands.is_owner()
+    async def _bot_stats(self, ctx: Context):
+        """Various bot stat monitoring tools."""
+
+        # I forgor💀 from where but I yoinked this somewhere from
+        # github.com/Rapptz/RoboDanny/tree/rewrite/cogs
+
+        HEALTHY = discord.Colour(value=0x43B581)
+        UNHEALTHY = discord.Colour(value=0xF04947)
+        # WARNING = discord.Colour(value=0xF09E47)
+
+        # Process stats
+        process = self.process
+        with process.oneshot():
+            cpu_usage = process.cpu_percent() / psutil.cpu_count()
+            thread_count = process.num_threads()
+            memory = process.memory_full_info()
+            name = process.name()
+            pid = process.pid
+
+            physical_memory = memory.rss / 1024 ** 2
+            virtual_memory = memory.vms / 1024 ** 2
+            unique_memory = memory.uss / 1024 ** 2
+
+        # Message cache stats
+        if self.client._connection.max_messages:
+            message_cache = f'{len(self.client.cached_messages)}/{self.client._connection.max_messages}'
+        else:
+            message_cache = 'Disabled'
+
+        # Tasks stats
+        all_tasks = asyncio.all_tasks(loop=self.client.loop)
+        event_tasks = [
+            t for t in all_tasks
+            if 'Client._run_event' in repr(t) and not t.done()
+        ]
+
+        future_tasks = [
+            t for t in event_tasks
+            if 'Future pending' in repr(t)
+        ]
+
+        # # Distribution stats
+        # Try to locate what vends the `discord` package
+        distributions: list[str] = [
+            dist for dist in packages_distributions()['discord']  # type: ignore
+            if any(
+                file.parts == ('discord', '__init__.py')  # type: ignore
+                for file in distribution(dist).files  # type: ignore
+            )
+        ]
+
+        if distributions:
+            dist_version = f'{distributions[0]}: v{package_version(distributions[0])}'
+        else:
+            dist_version = f'unknown: v{discord.__version__}'
+
+        python_version, _, _ = sys.version.partition('(')
+
+        embed = discord.Embed(
+            title='Bot Stats Report',
+            colour=HEALTHY,
+            timestamp=discord.utils.utcnow()
+        ).add_field(
+            name='Process',
+            value=f'{cpu_usage:.2f}% CPU\n'
+                  f'Threads: {thread_count}\n'
+                  f'Name: "{name}"\n'
+                  f'PID: {pid}',
+            inline=True
+        ).add_field(
+            name='Memory',
+            value=f'Physical: {physical_memory:.2f} MiB\n'
+                  f'Unique: {unique_memory:.2f} MiB\n'
+                  f'Virtual: {virtual_memory:.2f} MiB',
+            inline=True
+        ).add_field(
+            name=f'Cache',
+            value=f'Guilds: {len(self.client.guilds)}\n'
+                  f'Users: {len(self.client.users)}\n'
+                  f'Messages: {message_cache}',
+            inline=True
+        ).add_field(
+            name='Events Waiting',
+            value=f'Total: {len(event_tasks)}\n'
+                  f'Future task: {len(future_tasks)}',
+            inline=False
+        ).add_field(
+            name='Distribution',
+            value=f'{dist_version}\n'
+                  f'Jishaku: v{package_version("jishaku")}\n'
+                  f'Python: v{python_version}\n'
+                  f'Platform: {sys.platform}',
+            inline=False
+        )
+
+        description = []
+
+        started_at = discord.utils.format_dt(self.client.started_at, 'R')
+        description.append(f'Started: {started_at}')
+
+        global_rate_limit = not self.client.http._global_over.is_set()  # noqa
+        description.append(f'Global Rate Limit: {global_rate_limit}')
+
+        if global_rate_limit:
+            embed.colour = UNHEALTHY
+
+        embed.description = '\n'.join(description)
+        await ctx.reply(embed=embed)
 
 
 async def setup(client: MoistBot) -> None:
