@@ -18,17 +18,22 @@ class Cmds(commands.Cog):
 
     @commands.command()
     @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
+    async def ping_ws(self, ctx: Context):
+        """Discord websocket protocol latency."""
+        await ctx.reply(f'Discord websocket latency is {round(self.client.latency) * 1000}ms')
+
+    @commands.command()
+    @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     async def ping(self, ctx: Context, *, msg: Union[escape_mentions, str] = 'Pong!'):
+        """Measures a single round trip time."""
         before = time.monotonic()
         message = await ctx.reply(f'{msg}')
         ping = (time.monotonic() - before) * 1000
         await message.edit(content=f'{msg} in {int(ping)}ms')
 
-    """
     @commands.command()
-    async def ping(self, ctx, *, msg: str = 'Pong!'):
-        await ctx.reply(f'{msg} in {round(self.client.latency) * 1000}ms')
-    """
+    async def say(self, ctx: Context, *, msg: Union[escape_mentions, str]):
+        await ctx.send(msg)
 
     @commands.command()
     async def stutter(self, ctx: Context, *, msg: Union[escape_mentions, str]):
@@ -39,42 +44,6 @@ class Cmds(commands.Cog):
             return
 
         await ctx.reply(stuttered_msg)
-
-    @commands.is_owner()
-    @commands.command(hidden=True)
-    async def quote(self, ctx: Context, at_who: Union[discord.User, str], *, msg: Union[escape_mentions, str]):
-        if isinstance(at_who, discord.User):
-            at_who = at_who.mention
-        else:
-            at_who = escape_mentions(at_who)
-
-        await ctx.reply(f'{msg}\n\n' f' - **{at_who}**')
-
-    @commands.command()
-    async def say(self, ctx: Context, *, msg: Union[escape_mentions, str]):
-        await ctx.send(msg)
-
-    @commands.is_owner()
-    @commands.command(name='methods', brief='Used for debugging', hidden=True)
-    async def get_methods(self, ctx, user: discord.Member):
-        await ctx.reply(
-            f'id: {user.id}\n'
-            f'Mention: {user.mention}\n'
-            f'Raw: {user}\n'
-            f'Nick: {user.nick}\n'
-            f'Name: {user.name}\n'
-            f'Display name: {user.display_name}\n'
-            f'Discriminator: {user.discriminator}\n'
-            f'Avatar: {user.avatar}'
-        )
-
-    @commands.is_owner()
-    @commands.command(enabled=True, name='updatestatus', hidden=True)
-    async def update_status(self, ctx: Context):
-        """Update the bot's status"""
-        guilds = len(self.client.guilds)
-        await self.client.change_presence(activity=discord.Game(f'with {guilds} mosturized servers'))
-        await ctx.send('Updated status.')
 
     # Event listeners
     # @commands.Cog.listener()
