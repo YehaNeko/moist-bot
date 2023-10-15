@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from utils.context import Context
 
 
-PET_HAND_PATH = r'C:\Users\Jovan\Desktop\Stuff\moist bot dpy2.0\assets\petpet'
+PET_HAND_PATH = r'./assets/petpet'
 RESOLUTION = 150, 150
 PET_HAND_FRAMES = []
 for pet_img in os.listdir(PET_HAND_PATH):
