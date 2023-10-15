@@ -21,9 +21,9 @@ from importlib.metadata import distribution, packages_distributions
 from typing import TYPE_CHECKING, Optional, Literal, Annotated, Any
 
 # Extra imports for eval command
-import math
-import time
-import datetime
+import math  # noqa
+import time  # noqa
+import datetime  # noqa
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -127,7 +127,7 @@ class OwnerOnly(commands.Cog):
     async def debug(self, ctx: Context):
         pass
 
-    @debug.command(name='copyglobal', hidden=True)
+    @debug.command(name='copyglobal')
     async def copy_global_to_test_guild(self, ctx: Context, resync: Optional[bool] = True):
         self.client.tree.copy_global_to(guild=GUILD_OBJECT)
         await ctx.reply(':white_check_mark: Copied global app commands to **test guild**')
@@ -142,7 +142,7 @@ class OwnerOnly(commands.Cog):
 
             await ctx.invoke(self.sync_app_cmds, guild='guild')  # type: ignore
 
-    @debug.command(name='unloadappcmd', hidden=True)
+    @debug.command(name='unloadappcmd')
     async def unload_app_cmd(self, ctx: Context, cmd: str, resync: Optional[bool] = False):
         """Unload an application command."""
         unloaded = self.client.tree.remove_command(cmd)
@@ -159,7 +159,7 @@ class OwnerOnly(commands.Cog):
         else:
             await ctx.reply(f':white_check_mark: Unloaded `{unloaded}`.\n:warning: Re-sync is required.')
 
-    @debug.command(name='syncappcmds', hidden=True)
+    @debug.command(name='syncappcmds')
     async def sync_app_cmds(self, ctx: Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
         """Sync application commands."""
 
@@ -182,7 +182,7 @@ class OwnerOnly(commands.Cog):
         fmt = '\n'.join(repr(cmd) for cmd in synced) if synced else 'None'
         await ctx.reply(f':white_check_mark: Synced in **{place}**:\n`{fmt}`')
 
-    @debug.command(name='getappcmds', hidden=True)
+    @debug.command(name='getappcmds')
     async def get_app_cmds(self, ctx: Context, guild: Optional[Literal['guild', 'global']] = 'guild'):
         """Fetch currently registered application commands."""
 
@@ -200,20 +200,20 @@ class OwnerOnly(commands.Cog):
         fmt = '\n'.join(repr(cmd) for cmd in cmds) if cmds else 'None'
         await ctx.reply(f':white_check_mark: Fetched {len(cmds)} command(s) in **{place}**:\n`{fmt}`')
 
-    @debug.command(hidden=True)
+    @debug.command()
     async def clear(self, ctx: Context):
         os.system('cls||clear')
         await ctx.message.add_reaction('✅')
         logger.info('Console cleared.')
 
     @commands.guild_only()
-    @debug.command(hidden=True)
+    @debug.command()
     async def give_role(
-        self,
-        ctx: Context,
-        role: discord.Role,
-        *,
-        member: Optional[discord.Member] = commands.Author,
+            self,
+            ctx: Context,
+            role: discord.Role,
+            *,
+            member: Optional[discord.Member] = commands.Author,
     ):
         """Give someone a role."""
 
@@ -225,7 +225,30 @@ class OwnerOnly(commands.Cog):
 
         await ctx.reply(f':white_check_mark: Successfully given role `{role.name}` to `{member}`')
 
-    @debug.group(hidden=True)
+    @commands.command()
+    async def update_status(self, ctx: Context):
+        """Update the bot's status."""
+        guilds = len(self.client.guilds)
+        await self.client.change_presence(activity=discord.Game(f'with {guilds} moisturized servers'))
+        await ctx.send(':white_check_mark: Status updated.')
+
+    @commands.is_owner()
+    @commands.command(hidden=True)
+    async def methods(self, ctx, user: discord.Member = commands.Author):
+        """Used for debugging."""
+
+        await ctx.reply(
+            f'id: {user.id}\n'
+            f'Mention: {user.mention}\n'
+            f'Raw: {user}\n'
+            f'Nick: {user.nick}\n'
+            f'Name: {user.name}\n'
+            f'Display name: {user.display_name}\n'
+            f'Discriminator: {user.discriminator}\n'
+            f'Avatar: {user.avatar}'
+        )
+
+    @debug.group()
     async def emoji(self, _ctx: Context):
         pass
 
