@@ -17,33 +17,38 @@ if TYPE_CHECKING:
     from utils.context import Context
 
 
-PAT_HAND_PATH = r'C:\Users\Jovan\Desktop\Stuff\moist bot dpy2.0\assets\petpet'
-PAT_HAND_FRAMES = []
-for pet_img in os.listdir(PAT_HAND_PATH):
-    pet_img = Image.open(os.path.join(PAT_HAND_PATH, pet_img)).convert('RGBA')
-    PAT_HAND_FRAMES.append(pet_img)
+PET_HAND_PATH = r'C:\Users\Jovan\Desktop\Stuff\moist bot dpy2.0\assets\petpet'
+RESOLUTION = 150, 150
+PET_HAND_FRAMES = []
+for pet_img in os.listdir(PET_HAND_PATH):
+    pet_img = (
+        Image.open(os.path.join(PET_HAND_PATH, pet_img))
+        .convert('RGBA')
+        .resize(RESOLUTION, resample=Image.BICUBIC)
+    )
+    PET_HAND_FRAMES.append(pet_img)
 
 
 class PetPetCreator:
-    _pat_hand_frames = PAT_HAND_FRAMES
+    _pet_hand_frames = PET_HAND_FRAMES
     _converter: TransparentAnimatedGifConverter
     _base_img: Image.Image
-    _gif_buffer: BytesIO
+    gif_buffer: BytesIO
 
     def __init__(self, image_buffer: BytesIO) -> None:
-        self.image_buffer = image_buffer
+        self._image_buffer = image_buffer
 
-        self.resolution = 150, 150
-        self.max_frames = len(self._pat_hand_frames)
+        self.resolution = RESOLUTION
+        self.max_frames = len(self._pet_hand_frames)
         self.frames: list[Image.Image] = []
 
     def create_gif(self) -> BytesIO:
-        self._base_img = Image.open(self.image_buffer)\
+        self._base_img = Image.open(self._image_buffer)\
             .convert('RGBA').resize(self.resolution)
 
         # Init
-        self._converter = TransparentAnimatedGifConverter(alpha_threshold=10)
-        self._gif_buffer = BytesIO()
+        self._converter = TransparentAnimatedGifConverter(alpha_threshold=15)
+        self.gif_buffer = BytesIO()
 
         # Round corners of base image
         x, y = self.resolution
@@ -55,7 +60,7 @@ class PetPetCreator:
         self._process_frames()
         self._render_gif()
 
-        return self._gif_buffer
+        return self.gif_buffer
 
     def _process_frames(self) -> None:
         for i in range(self.max_frames):
@@ -74,7 +79,7 @@ class PetPetCreator:
             canvas = Image.new('RGBA', size=self.resolution, color=(255, 255, 255, 0))
             canvas.paste(new_img, box=box)
 
-            pat_hand = self._pat_hand_frames[i].resize(self.resolution)
+            pat_hand = self._pet_hand_frames[i]
 
             canvas.paste(pat_hand, mask=pat_hand)
             self.frames.append(canvas)
@@ -91,26 +96,25 @@ class PetPetCreator:
 
             new_frames.append(frame_p)
 
-        save_kwargs = dict(
+        output_image = new_frames[0]
+        output_image.save(
+            self.gif_buffer,
             format='GIF',
             save_all=True,
             optimize=False,
             append_images=new_frames[1:],
             duration=durations,
             disposal=2,  # Other disposals don't work
-            loop=0,
+            loop=0
         )
-
-        output_image = new_frames[0]
-        output_image.save(self._gif_buffer, **save_kwargs)
-        self._gif_buffer.seek(0)
+        self.gif_buffer.seek(0)
 
     @staticmethod
     def _gen_mask(
         *,
         start_size: tuple[int, int],
         final_size: tuple[int, int],
-        descale: Optional[Union[int, float]] = 0,
+        descale: Union[int, float] = 0,
     ) -> Image.Image:
         """Generate a smooth ellipse mask"""
 
