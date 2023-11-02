@@ -177,7 +177,7 @@ class SnakeGameContainer:
         y = rand_idx // i
         self.apple[:] = (x, y)
 
-        while (
+        if (
             np.any(np.all(self.apple == self.snake_body[: self.snake_body_len], axis=1))
             or np.array_equal(self.apple, self.snake_head)
         ):
