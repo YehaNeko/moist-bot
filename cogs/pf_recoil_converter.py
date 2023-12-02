@@ -109,8 +109,6 @@ class RecoilConverter:
         mean_and_variance: Vec2Pack = zip(mean_v3, variance_v3)
         _max: Vec3 = tuple(map(cls._calc_max, mean_and_variance))  # type: ignore
 
-        print(f'{_min = }\n{_max = }\n{tuple(mean_and_variance) = }\n{variance_v3 = }')
-
         return OldRecoilStat(_min, _max)
 
     @classmethod
