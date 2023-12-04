@@ -13,6 +13,7 @@ if TYPE_CHECKING:
         NamedTuple,
         TypedDict,
         Optional,
+        Sequence,
         Tuple,
         Union,
         Self
@@ -88,7 +89,7 @@ class RecoilConverter:
         return mean + variance
 
     @classmethod
-    def calc_mean_and_variance(cls, min_v3: Vec3, max_v3: Vec3) -> Vec3Tuple:
+    def calc_mean_and_variance(cls, min_v3: Vec3, max_v3: Vec3) -> NewRecoilStat:
         min_and_max: Vec2Pack = zip(min_v3, max_v3)
         mean: Vec3 = tuple(map(cls._calc_mean, min_and_max))  # type: ignore
 
@@ -97,7 +98,7 @@ class RecoilConverter:
         return NewRecoilStat(mean, variance)
 
     @classmethod
-    def calc_min_and_max(cls, mean_v3: Vec3, variance_v3: Vec3) -> Vec3Tuple:
+    def calc_min_and_max(cls, mean_v3: Vec3, variance_v3: Vec3) -> OldRecoilStat:
         mean_and_variance: Vec2Pack = zip(mean_v3, variance_v3)
         _min: Vec3 = tuple(map(cls._calc_min, mean_and_variance))  # type: ignore
 
@@ -131,7 +132,7 @@ class ConvertModal(discord.ui.Modal):
     """
 
     full_name_kwargs: InputRecoilKwargs
-    recoil_param: OldRecoilStat | NewRecoilStat
+    recoil_param: Sequence[str]
     converter: Callable[[RecoilKwargs], RecoilConverter]
 
     converted_name_kwargs = InputRecoilKwargs(
@@ -197,8 +198,6 @@ class ConvertModal(discord.ui.Modal):
             stat = getattr(stats, k, None)
             if stat is None:
                 continue
-
-            print(f'{stat = }\n{self.recoil_param = }')
 
             value = '\n'.join(
                 f'{p.title()}: {", ".join(str(i) for i in getattr(stat, p))}'
