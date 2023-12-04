@@ -1,23 +1,22 @@
 from __future__ import annotations
 
 import discord
-from discord import app_commands
 from discord.ext import commands
+from discord import app_commands, Interaction
 
-from typing import (
-    TYPE_CHECKING,
-    Optional,
-    Union,
-    Literal,
-    Tuple,
-    NamedTuple,
-    TypedDict,
-    Self,
-)
+from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from main import MoistBot
-    from utils.context import Context
+    from collections.abc import Callable
+    from typing import (
+        NamedTuple,
+        TypedDict,
+        Optional,
+        Tuple,
+        Union,
+        Self
+    )
 
 
 N = Union[int, float]
@@ -28,8 +27,6 @@ Vec2Tuple = Tuple[Vec2, Vec2]
 Vec3Tuple = Tuple[Vec3, Vec3]
 
 Vec2Pack = Tuple[Vec2, Vec2, Vec2]
-Vec3Pack = Tuple[Vec3Tuple, Vec3Tuple, Vec3Tuple]
-
 RecoilArg = Tuple[Vec3Tuple, ...]
 
 
@@ -56,11 +53,9 @@ class InputRecoilKwargs(TypedDict):
 
 
 class RecoilConverter:
-    old_args: Optional[RecoilArg]
-    new_args: Optional[RecoilArg]
-    cam: Vec3Tuple
-    trans: Vec3Tuple
-    rot: Vec3Tuple
+    cam: Optional[Vec3Tuple]
+    trans: Optional[Vec3Tuple]
+    rot: Optional[Vec3Tuple]
 
     def __init__(
         self,
@@ -132,11 +127,12 @@ class RecoilConverter:
 
 class ConvertModal(discord.ui.Modal):
     """Base class for the conversion modal.
-    This class is meant to be subclassed shouldn't be used directly.
+    This class is meant to be subclassed cannot be used directly.
     """
+
     full_name_kwargs: InputRecoilKwargs
-    recoil_param: tuple[str, ...]
-    converter: callable
+    recoil_param: OldRecoilStat | NewRecoilStat
+    converter: Callable[[RecoilKwargs], RecoilConverter]
 
     converted_name_kwargs = InputRecoilKwargs(
         cam='Camera recoil (Y, X, Z)',
@@ -166,7 +162,7 @@ class ConvertModal(discord.ui.Modal):
         return args
 
     @classmethod
-    def process_input(cls, arg: str) -> tuple[tuple[float], ...]:
+    def process_input(cls, arg: str) -> tuple[tuple[float, ...], ...] | None:
         args = arg.split('\n', maxsplit=2)[:2]
 
         try:
@@ -175,7 +171,7 @@ class ConvertModal(discord.ui.Modal):
             args = None
 
         # Sanity check
-        if len(args) != len(cls.recoil_param):
+        if args and len(args) != len(cls.recoil_param):
             args = None
 
         return args
@@ -193,8 +189,8 @@ class ConvertModal(discord.ui.Modal):
                 ephemeral=True
             )
 
-        stats: RecoilConverter = self.converter(kwargs)
         embed = discord.Embed(title='Recoil Conversion')
+        stats: RecoilConverter = self.converter(kwargs)
         footer = ['Values given for conversion:']
 
         for k, v in self.converted_name_kwargs.items():
@@ -252,6 +248,7 @@ class PFRecoilConverter(commands.Cog):
 
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @app_commands.command(name='pf-convert')
+    @app_commands.rename(conversion_type='conversion-type')
     @app_commands.choices(
         conversion_type=[
             app_commands.Choice(value=k, name=v)
@@ -259,7 +256,9 @@ class PFRecoilConverter(commands.Cog):
         ]
     )
     async def pf_convert(
-        self, interaction: discord.Interaction, conversion_type: Literal[0, 1]
+        self,
+        interaction: Interaction,
+        conversion_type: Literal[0, 1]
     ):
         conversion = map_conversion[conversion_type]
         await interaction.response.send_modal(conversion())
