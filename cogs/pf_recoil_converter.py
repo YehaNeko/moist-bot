@@ -4,20 +4,20 @@ import discord
 from discord.ext import commands
 from discord import app_commands, Interaction
 
-from typing import TYPE_CHECKING, Literal
+from typing import (
+    TYPE_CHECKING,
+    NamedTuple,
+    TypedDict,
+    Literal,
+    Union,
+    Tuple
+)
 
 if TYPE_CHECKING:
     from main import MoistBot
     from collections.abc import Callable
-    from typing import (
-        NamedTuple,
-        TypedDict,
-        Optional,
-        Sequence,
-        Tuple,
-        Union,
-        Self
-    )
+    from typing import Optional, Sequence, Self
+    
 
 
 N = Union[int, float]
@@ -144,7 +144,7 @@ class ConvertModal(discord.ui.Modal):
     def __init__(self, **kwargs) -> None:
         self.__modal_children_items__ |= {
             k: discord.ui.TextInput(
-                label=v,
+                label=str(v),
                 placeholder='eg.\n1 2 3\n4 5 6',
                 style=discord.TextStyle.long,
                 min_length=11,
@@ -163,7 +163,7 @@ class ConvertModal(discord.ui.Modal):
         return args
 
     @classmethod
-    def process_input(cls, arg: str) -> tuple[tuple[float, ...], ...] | None:
+    def process_input(cls, arg: str) -> Optional[tuple[tuple[float, ...], ...]]:
         args = arg.split('\n', maxsplit=2)[:2]
 
         try:
@@ -245,8 +245,7 @@ class PFRecoilConverter(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
 
-    @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
-    @app_commands.command(name='pf-convert')
+    @commands.cooldown(rate=1, per=6, type=commands.BucketType.user)
     @app_commands.rename(conversion_type='conversion-type')
     @app_commands.choices(
         conversion_type=[
@@ -254,6 +253,7 @@ class PFRecoilConverter(commands.Cog):
             for k, v in map_conversion_names.items()
         ]
     )
+    @app_commands.command(name='pf-convert')
     async def pf_convert(
         self,
         interaction: Interaction,
