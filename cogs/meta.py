@@ -329,16 +329,16 @@ class Meta(commands.Cog):
         """
 
         def to_string(c):
-            digit = f"{ord(c):x}"
-            name = unicodedata.name(c, "Name not found.")
-            return f"`\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>"
+            digit = f'{ord(c):x}'
+            name = unicodedata.name(c, 'Name not found.')
+            return f'`\\U{digit:>08}`: {name} - {c} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>'
 
-        msg = "\n".join(map(to_string, characters))
+        msg = '\n'.join(map(to_string, characters))
         if len(msg) > 2000:
-            return await ctx.reply("Output too long to display.")
+            return await ctx.reply('Output too long to display.')
         await ctx.reply(msg)
 
-    @commands.command(name="quit", hidden=True)
+    @commands.command(name='quit', hidden=True)
     @commands.is_owner()
     async def _quit(self, _ctx: Context):
         """Quits the bot."""
