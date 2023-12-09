@@ -83,13 +83,16 @@ class ErrorHandler(commands.Cog):
             literals = error.literals
             param = error.param
 
-            to_string = [repr(l) for l in literals]
+            to_string = [repr(literal) for literal in literals]
             if len(to_string) > 2:
                 fmt = '{}, or {}'.format(', '.join(to_string[:-1]), to_string[-1])
             else:
                 fmt = ' or '.join(to_string)
             
-            return await ctx.reply(f':warning: Parameter `{param.displayed_name or param.name}` can only be {fmt}.')
+            return await ctx.reply(
+                f':warning: Parameter `{param.displayed_name or param.name}` can only be {fmt}.',
+                ephemeral=True
+            )
 
         elif isinstance(error, commands.BadArgument):
             if str(error):
