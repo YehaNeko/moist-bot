@@ -252,14 +252,27 @@ class OwnerOnly(commands.Cog):
     async def emoji(self, _ctx: Context):
         pass
 
-    @emoji.command()
-    async def add(self, ctx: Context, alias: str, emoji_link: Annotated[str, URL]):
+    @emoji.command(name='add')
+    async def emoji_add(self, ctx: Context, alias: str, emoji_link: Optional[str] = None):
         """Create a custom Emoji for the guild."""
-        emoji: bytes = await self.client.http.get_from_cdn(emoji_link)
+        reply = ctx.replied_message
+
+        # Fetch emoji bytes
+        if emoji_link:
+            emoji = await self.client.http.get_from_cdn(emoji_link)
+        elif reply and reply.attachments:
+            emoji = await reply.attachments[0].read(use_cached=True)
+        else:
+            return await ctx.reply(':warning: Missing image', ephemeral=True)
+
+        # Format alias
+        alias = alias.replace(' ', '_')
+
+        # Create emoji
         await ctx.guild.create_custom_emoji(name=alias, image=emoji)
         await ctx.reply(f':white_check_mark: Added emoji :{alias}:')
 
-    @add.error
+    @emoji_add.error
     async def on_error(self, ctx: Context, error: discord.DiscordException):
         error = getattr(error, 'original', error)
 
@@ -274,8 +287,8 @@ class OwnerOnly(commands.Cog):
             logger.exception('Unable to add emoji', exc_info=error.__traceback__)
             await ctx.reply(":no_entry: I can't do that :(")
 
-    @emoji.command(aliases=['del', 'delete'])
-    async def remove(self, ctx: Context, alias: str):
+    @emoji.command(name='remove', aliases=['del', 'delete'])
+    async def emoji_remove(self, ctx: Context, alias: str):
         """Delete a custom Emoji from the guild"""
         # error handling? never heard of it :3
         emoji = discord.utils.get(ctx.guild.emojis, name=alias)
