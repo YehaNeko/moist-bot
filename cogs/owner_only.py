@@ -14,11 +14,11 @@ import inspect
 import logging
 import textwrap
 import traceback
-from yarl import URL
 from contextlib import redirect_stdout
 from jishaku.modules import package_version
+from unicodedata import name as unicodedata_name
 from importlib.metadata import distribution, packages_distributions
-from typing import TYPE_CHECKING, Optional, Literal, Annotated, Any
+from typing import TYPE_CHECKING, Optional, Literal, Any
 
 # Extra imports for eval command
 import math  # noqa
@@ -32,6 +32,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger('discord.' + __name__)
 # noinspection PyBroadException
+
+
+# fmt: off
+class StickerFlags(commands.FlagConverter, prefix='--', delimiter=' ', case_insensitive=True):
+    alias: str = commands.flag(aliases=['name', 'n', 'a'])
+    description: str = commands.flag(aliases=['desc', 'd'], default='No description provided.')
+    related_emoji: str = commands.flag(aliases=['emoji', 'e'])
+    sticker_link: Optional[str] = commands.flag(aliases=['sticker', 'link', 's'])
+# fmt: on
 
 
 class OwnerOnly(commands.Cog):
@@ -294,6 +303,67 @@ class OwnerOnly(commands.Cog):
         emoji = discord.utils.get(ctx.guild.emojis, name=alias)
         await ctx.guild.delete_emoji(emoji)
         await ctx.reply(':white_check_mark: Deleted emoji.')
+
+    @debug.group()
+    async def sticker(self, _ctx: Context):
+        pass
+
+    @sticker.command(name='add')
+    async def sticker_add(
+        self,
+        ctx: Context,
+        *,
+        flags: StickerFlags,
+    ):
+        """Create a Sticker for the guild."""
+        reply = ctx.replied_message
+
+        # Fetch sticker bytes
+        if flags.sticker_link:
+            sticker = await self.client.http.get_from_cdn(flags.sticker_link)
+        elif reply and reply.attachments:
+            sticker = await reply.attachments[0].read(use_cached=True)
+        else:
+            return await ctx.reply(':warning: Missing image', ephemeral=True)
+
+        # Convert bytes into a file
+        sticker = discord.File(fp=io.BytesIO(sticker))
+        related_emoji = unicodedata_name(flags.related_emoji)
+
+        # Create sticker
+        await ctx.guild.create_sticker(
+            name=flags.alias,
+            description=flags.description,
+            emoji=related_emoji,
+            file=sticker
+        )
+        await ctx.reply(f':white_check_mark: Added sticker `{flags.alias}`')
+
+    @sticker_add.error
+    async def on_error(self, ctx: Context, error: discord.DiscordException):
+        error = getattr(error, 'original', error)
+
+        if isinstance(error, discord.Forbidden):
+            await ctx.reply(':no_entry: lol I dont have the perms for that xd')
+
+        elif isinstance(error, commands.MissingRequiredFlag):
+            await ctx.reply(f':warning: {str(error)}')
+
+        elif isinstance(error, discord.HTTPException):
+            logger.exception('Unable to add sticker', exc_info=error.__traceback__)
+            await ctx.reply(':warning: Unable to resolve emoji')
+
+        else:
+            logger.exception('Unable to add sticker', exc_info=error.__traceback__)
+            await ctx.reply(":no_entry: I can't do that :(")
+
+    @sticker.command(name='remove', aliases=['del', 'delete'])
+    async def sticker_remove(self, ctx: Context, alias: str):
+        """Delete a Sticker from the guild"""
+        # error handling? never heard of it :3
+        sticker = discord.utils.get(ctx.guild.stickers, name=alias)
+        await ctx.guild.delete_sticker(sticker)
+        await ctx.reply(':white_check_mark: Deleted sticker.')
 
     @commands.command(hidden=True, name='eval')
     async def _eval(self, ctx: Context, *, body: str):
