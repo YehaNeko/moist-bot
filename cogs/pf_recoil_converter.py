@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from main import MoistBot
     from collections.abc import Callable
     from typing import Optional, Sequence, Self
-    
 
 
 N = Union[int, float]
