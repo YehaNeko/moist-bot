@@ -17,6 +17,13 @@ if TYPE_CHECKING:
     from cogs.utils.context import Context
 
 
+"""
+THIS CODE IS ABSOLUTE SLOP THAT I WROTE A LONG TIME AGO.
+I WILL REWRITE THIS EVENTUALLY.
+MEOW.
+"""
+
+
 class PfGunEmbed(discord.Embed):
     def __init__(self, ctx: Context):
         super().__init__(
