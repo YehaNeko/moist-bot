@@ -31,11 +31,14 @@ class Mp3(commands.Cog):
     def _get_buffer(url) -> tuple[io.BytesIO, str]:
         # Get audio stream
         audio_stream = YouTube(url).streams.get_audio_only()
+        
+        if audio_stream is None:
+            raise pytube.exceptions.PytubeError from commands.BadArgument
 
         # Check file size
         if audio_stream.filesize_approx > 8_388_608:
             raise FileTooBig()
-
+        
         # Download
         buffer = io.BytesIO()
         audio_stream.stream_to_buffer(buffer)
@@ -46,12 +49,12 @@ class Mp3(commands.Cog):
     @commands.cooldown(rate=1, per=10, type=commands.BucketType.user)
     @commands.is_owner()
     async def mp3(self, ctx: Context, *, url: str):
-        """Youtube mp3 downloader"""
+        """Youtube mp3 downloader."""
 
         async with ctx.typing():
             # Gets buffer in separate thread to avoid blocking
             buffer, title = await self.execute(None, self._get_buffer, url)
-            await ctx.reply(file=discord.File(fp=buffer, filename=title + ".mp3"))
+            await ctx.reply(file=discord.File(fp=buffer, filename=f'{title}.mp3'))
             buffer.close()
 
     async def cog_command_error(self, ctx: commands.Context, error: Exception) -> None:
@@ -59,21 +62,25 @@ class Mp3(commands.Cog):
 
         # File too big
         if isinstance(error, FileTooBig):
-            await ctx.reply("File is over 8mb and cannot be sent.")
+            await ctx.reply(':warning: File is over 8MiB and cannot be sent.')
 
         # Pytube regex error
         elif isinstance(error, pytube.exceptions.RegexMatchError):
-            await ctx.reply(f"Cannot find video url `{ctx.kwargs['url']}`.")
+            await ctx.reply(f':warning: Cannot find video url `{ctx.kwargs["url"]}`.')
 
         # Pytube base error
         elif isinstance(error, pytube.exceptions.PytubeError):
             logging.exception(type(error), exc_info=error)
-            await ctx.reply(f"Cannot download the video.")
+            await ctx.reply(f':warning: Cannot download the audio.')
 
         # This shouldn't happen
         elif isinstance(error, discord.HTTPException):
-            logging.exception(type(error), exc_info=error)
-            await ctx.reply("HTTP Error.")
+            try:
+                await ctx.reply(':warning: HTTP Error.')
+                logging.exception(type(error), exc_info=error)
+            except discord.DiscordException:
+                # probably missing perms
+                return
 
 
 async def setup(client: MoistBot) -> None:
