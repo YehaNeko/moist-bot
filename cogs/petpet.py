@@ -6,8 +6,7 @@ from discord.ext import commands
 
 import os
 from io import BytesIO
-from typing import TYPE_CHECKING, Optional, Union
-from concurrent.futures import ProcessPoolExecutor
+from typing import TYPE_CHECKING, Union
 
 from PIL import Image, ImageDraw
 from cogs.utils.gif_converter import TransparentAnimatedGifConverter
@@ -43,8 +42,11 @@ class PetPetCreator:
         self.frames: list[Image.Image] = []
 
     def create_gif(self) -> BytesIO:
-        self._base_img = Image.open(self._image_buffer)\
-            .convert('RGBA').resize(self.resolution)
+        """Creates the gif from the image buffer."""
+
+        # Load the image from the buffer and set it up
+        self._base_img = Image.open(self._image_buffer)
+        self._base_img = self._base_img.convert('RGBA').resize(self.resolution)
 
         # Init
         self._converter = TransparentAnimatedGifConverter(alpha_threshold=15)
@@ -139,15 +141,13 @@ class AvatarEmbed(discord.Embed):
         )
         self.set_image(url='attachment://image.gif')
         self.set_author(
-            name=f'{user.display_name}\'s petpet',
-            icon_url='attachment://image.gif'
+            name=f'{user.display_name}\'s petpet', icon_url='attachment://image.gif'
         )
 
 
 class PetPet(commands.Cog):
     def __init__(self, client: MoistBot):
         self.client: MoistBot = client
-        self.executor = ProcessPoolExecutor(max_workers=1)
         self.execute = self.client.loop.run_in_executor
 
     @staticmethod
@@ -157,21 +157,28 @@ class PetPet(commands.Cog):
     @commands.cooldown(rate=1, per=4, type=commands.BucketType.user)
     @app_commands.describe(user='Discord user')
     @commands.hybrid_command(name='petpet', description='Petpet')
-    async def petpet(self, ctx: Context, user: Optional[discord.User] = commands.Author):
+    async def petpet(self, ctx: Context, user: discord.User = commands.Author):
         await ctx.typing()
 
-        url = user.display_avatar.with_format('png').with_size(2048).url
+        reply = ctx.replied_message
+        img_buffer = BytesIO()
 
-        async with self.client.session.get(url) as resp:
-            if resp.status != 200:
-                raise FileNotFoundError(resp.status, resp.url)
-            img_buffer = BytesIO(await resp.read())
+        # Fetch emoji bytes
+        # Order of priority: specified user -> attachment -> reply attachment -> author
+        if user != ctx.author:
+            await user.display_avatar.with_format('png').save(fp=img_buffer)
+        elif ctx.message.attachments:
+            await ctx.message.attachments[0].save(fp=img_buffer, use_cached=True)
+        elif reply and reply.attachments:
+            await reply.attachments[0].save(fp=img_buffer, use_cached=True)
+        else:
+            await user.display_avatar.with_format('png').save(fp=img_buffer)
 
-            # Avoid blocking
-            img_buffer = await self.execute(self.executor, self._get_buffer, img_buffer)
+        # Avoid blocking
+        img_buffer = await self.execute(self.client.executor, self._get_buffer, img_buffer)
 
         # Send image
-        file = discord.File(fp=img_buffer, filename='image.gif')
+        file = discord.File(fp=img_buffer, filename='petpet.gif')
         await ctx.reply(file=file, embed=AvatarEmbed(user))
 
 
