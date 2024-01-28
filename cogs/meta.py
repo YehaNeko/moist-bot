@@ -346,11 +346,10 @@ class Meta(commands.Cog):
 
     @commands.command()
     async def info(
-        self, ctx: Context, *, user: Union[discord.Member, discord.User] = None
+        self, ctx: Context, *, user: Union[discord.Member, discord.User] = commands.Author
     ):
         """Shows info about a user."""
 
-        user = user or ctx.author
         e = discord.Embed()
 
         if ctx.guild is not None and isinstance(user, discord.Member):
