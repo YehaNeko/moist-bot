@@ -42,7 +42,7 @@ class Avatar(commands.Cog):
         embeds: list[discord.Embed] = []
 
         # First embed with base avatar
-        avatar_url = user.avatar.url
+        avatar_url = user.avatar.url if user.avatar else user.default_avatar.url
         embed = AvatarEmbed(avatar_url, user)
         embeds.append(embed)
 
