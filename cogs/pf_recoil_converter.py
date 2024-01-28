@@ -135,9 +135,9 @@ class ConvertModal(discord.ui.Modal):
     converter: Callable[[RecoilKwargs], RecoilConverter]
 
     converted_name_kwargs = InputRecoilKwargs(
-        cam='Camera recoil (Y, X, Z)',
-        trans='Translational recoil (X, Y, Z)',
-        rot='Rotational recoil (Y, X, Z)',
+        cam='Camera recoil (X, Y, Z)',
+        trans='Translational recoil (Y, X, Z)',
+        rot='Rotational recoil (X, Y, Z)',
     )
 
     def __init__(self, **kwargs) -> None:
@@ -219,9 +219,9 @@ class ConvertOldToNewModal(ConvertModal, title='Convert old -> new'):
     converter = RecoilConverter.from_old
 
     full_name_kwargs = InputRecoilKwargs(
-        cam='Min and max cam recoil (Y, X, Z)',
-        trans='Min and max trans recoil (X, Y, Z)',
-        rot='Min and max rot recoil (Y, X, Z)',
+        cam='Min and max cam recoil (X, Y, Z)',
+        trans='Min and max trans recoil (Y, X, Z)',
+        rot='Min and max rot recoil (X, Y, Z)',
     )
 
 
@@ -230,9 +230,9 @@ class ConvertNewToOldModal(ConvertModal, title='Convert new -> old'):
     converter = RecoilConverter.from_new
 
     full_name_kwargs = InputRecoilKwargs(
-        cam='Mean and variance cam recoil (Y, X, Z)',
-        trans='Mean and variance trans recoil (X, Y, Z)',
-        rot='Mean and variance rot recoil (Y, X, Z)',
+        cam='Mean and variance cam recoil (X, Y, Z)',
+        trans='Mean and variance trans recoil (Y, X, Z)',
+        rot='Mean and variance rot recoil (X, Y, Z)',
     )
 
 
