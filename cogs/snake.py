@@ -293,12 +293,12 @@ class SnakeGameView(discord.ui.View):
         *,
         embed: discord.Embed,
         message: Optional[discord.Message] = None,
-        timeout: Optional[float] = 15,
+        timeout: float = 15,
     ):
         super().__init__(timeout=timeout)
         self.ctx: Context = ctx
         self.embed: discord.Embed = embed
-        self.message: discord.Message = message
+        self.message: Optional[discord.Message] = message
         self.game_instance: SnakeGameContainer = game_instance
         self.opposite_button: Optional[discord.ui.Button] = None
         self.last_opposite_button: Optional[discord.ui.Button] = None
