@@ -5,7 +5,7 @@ from discord.ext import commands
 
 import io
 from PIL import Image
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from concurrent.futures import ProcessPoolExecutor
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ class LowQualityProfilePicture(commands.Cog):
         self,
         ctx: Context,
         user: discord.User = commands.Author,
-        factor: Optional[float] = 1
+        factor: float = 1
     ):
         """Display a low quality version of a user's avatar."""
 
