@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord.utils import escape_mentions
 
 import time
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Annotated
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -20,11 +20,11 @@ class Cmds(commands.Cog):
     @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
     async def ping_ws(self, ctx: Context):
         """Discord websocket protocol latency."""
-        await ctx.reply(f'Discord websocket latency is {round(self.client.latency) * 1000}ms')
+        await ctx.reply(f'Discord websocket latency is {round(self.client.latency * 1000)}ms')
 
     @commands.command()
     @commands.cooldown(rate=1, per=3, type=commands.BucketType.user)
-    async def ping(self, ctx: Context, *, msg: Union[escape_mentions, str] = 'Pong!'):
+    async def ping(self, ctx: Context, *, msg: Annotated[str, escape_mentions] = 'Pong!'):
         """Measures a single round trip time."""
         before = time.monotonic()
         message = await ctx.reply(f'{msg}')
@@ -32,11 +32,11 @@ class Cmds(commands.Cog):
         await message.edit(content=f'{msg} in {int(ping)}ms')
 
     @commands.command()
-    async def say(self, ctx: Context, *, msg: Union[escape_mentions, str]):
+    async def say(self, ctx: Context, *, msg: Annotated[str, escape_mentions]):
         await ctx.send(msg)
 
     @commands.command()
-    async def stutter(self, ctx: Context, *, msg: Union[escape_mentions, str]):
+    async def stutter(self, ctx: Context, *, msg: Annotated[str, escape_mentions]):
         stuttered_msg = '  '.join(f'{word[0]}-{word[0]}-{word}' for word in msg.split(' '))
 
         if len(stuttered_msg) >= 2000:
