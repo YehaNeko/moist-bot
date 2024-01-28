@@ -3,6 +3,7 @@ from __future__ import annotations
 import discord
 import discord.utils
 from discord.ext import commands
+from cogs.utils.converters import get_media_from_ctx
 from config import GUILD_OBJECT
 
 import io
@@ -309,25 +310,18 @@ class OwnerOnly(commands.Cog):
         pass
 
     @sticker.command(name='add')
-    async def sticker_add(
-        self,
-        ctx: Context,
-        *,
-        flags: StickerFlags,
-    ):
+    async def sticker_add(self, ctx: Context, *, flags: StickerFlags):
         """Create a Sticker for the guild."""
-        reply = ctx.replied_message
 
         # Fetch sticker bytes
-        if flags.sticker_link:
-            sticker = await self.client.http.get_from_cdn(flags.sticker_link)
-        elif reply and reply.attachments:
-            sticker = await reply.attachments[0].read(use_cached=True)
-        else:
-            return await ctx.reply(':warning: Missing image', ephemeral=True)
+        sticker = await get_media_from_ctx(ctx, arg=flags.sticker_link)
+
+        # This only occurs when all checks fail
+        if not sticker:
+            return await ctx.reply(':warning: Missing image.', ephemeral=True)
 
         # Convert bytes into a file
-        sticker = discord.File(fp=io.BytesIO(sticker))
+        sticker = discord.File(fp=sticker)
         related_emoji = unicodedata_name(flags.related_emoji)
 
         # Create sticker
@@ -351,7 +345,7 @@ class OwnerOnly(commands.Cog):
 
         elif isinstance(error, discord.HTTPException):
             logger.exception('Unable to add sticker', exc_info=error.__traceback__)
-            await ctx.reply(':warning: Unable to resolve emoji')
+            await ctx.reply(':warning: Unable to resolve sticker')
 
         else:
             logger.exception('Unable to add sticker', exc_info=error.__traceback__)
