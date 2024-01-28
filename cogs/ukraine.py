@@ -134,7 +134,7 @@ class Ukraine(commands.Cog):
     @commands.cooldown(rate=1, per=5, type=commands.BucketType.user)
     @app_commands.describe(user='Optionally select a user.')
     @commands.hybrid_command()
-    async def ukraine(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
+    async def ukraine(self, ctx: Context, *, user: discord.User = commands.Author):
         """Generates a Ukrainian colored ring border around someone's avatar"""
 
         async with ctx.typing():
