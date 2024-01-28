@@ -126,3 +126,9 @@ class Context(commands.Context):
         view.message = await self.send(message, view=view, ephemeral=delete_after)
         await view.wait()
         return view.value
+
+    async def web_get(self, url: str):
+        async with self.bot.session.get(url) as resp:
+            if resp.status != 200:
+                raise FileNotFoundError(resp.status, resp.url)
+            return await resp.read()
