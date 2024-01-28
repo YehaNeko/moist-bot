@@ -13,6 +13,7 @@ import asyncio
 import aiohttp
 from datetime import datetime
 from contextlib import contextmanager
+from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -20,16 +21,17 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger('discord.' + __name__)
+extras = ('water ', 'Water ')
 sep = '-' * 12
 
 
 def _get_prefix(bot, message):
-    extras = ['water ', 'Water ']
     return commands.when_mentioned_or(*extras)(bot, message)
 
 
 class MoistBot(commands.Bot):
-    session = aiohttp.ClientSession
+    executor: ProcessPoolExecutor
+    session: aiohttp.ClientSession
 
     def __init__(self):
         allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
@@ -63,6 +65,7 @@ class MoistBot(commands.Bot):
                     logger.exception(f'Failed to load extension {filename}\n')
 
     async def setup_hook(self):
+        self.executor = ProcessPoolExecutor(max_workers=4)
         self.session = aiohttp.ClientSession()
         await asyncio.create_task(self.load_cogs())
 
