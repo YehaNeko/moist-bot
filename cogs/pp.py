@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 
 from random import randint
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -22,7 +22,7 @@ class Pp(commands.Cog):
         ]
 
     @commands.command()
-    async def pp(self, ctx: Context, *, user: Optional[discord.User] = commands.Author):
+    async def pp(self, ctx: Context, *, user: discord.User = commands.Author):
         """Measure your pp."""
 
         # NOT RIGGED
