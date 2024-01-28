@@ -21,6 +21,10 @@ logger = logging.getLogger("discord." + __name__)
 INTERVAL_OVERRIDE = None
 
 # TODO: add bypass check
+"""
+This code is VERY unfinished and it probably won't ever be finished.
+Unlucky.
+"""
 
 
 class ResolveChannel(commands.Converter, app_commands.Transformer):
@@ -80,7 +84,7 @@ class RedditPostTask(tasks.Loop):
     ) -> None:
         self.subreddit: reddit.Subreddit = subreddit
         self.channel: TextChannel | DMChannel = channel
-        self.submissions: AsyncIterator = subreddit.hot(limit=None)  # NOQA
+        self.submissions: AsyncIterator = subreddit.hot(limit=None)  # noqa
         super().__init__(self.send_post, *args, **kwargs)
 
         self._current_submission: reddit.Submission | None = None
