@@ -34,7 +34,9 @@ class MoistBot(commands.Bot):
     session: aiohttp.ClientSession
 
     def __init__(self):
-        allowed_mentions = discord.AllowedMentions(everyone=False, roles=False, users=True, replied_user=True)
+        allowed_mentions = discord.AllowedMentions(
+            everyone=False, roles=False, users=True, replied_user=True
+        )
         intents = discord.Intents(
             emojis_and_stickers=True,
             message_content=True,
@@ -64,7 +66,7 @@ class MoistBot(commands.Bot):
                 except commands.ExtensionError:
                     logger.exception(f'Failed to load extension {filename}\n')
 
-    async def setup_hook(self):
+    async def setup_hook(self) -> None:
         self.executor = ProcessPoolExecutor(max_workers=4)
         self.session = aiohttp.ClientSession()
         await asyncio.create_task(self.load_cogs())
@@ -84,23 +86,35 @@ class MoistBot(commands.Bot):
         await self.invoke(ctx)
 
     async def close(self) -> None:
-        await super().close()
         await self.session.close()
+        await super().close()
+        logger.info('Bot closed.')
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         guilds = len(self.guilds)
-        await self.change_presence(activity=discord.Game(f'with {guilds} moisturised servers'))
+        await self.change_presence(
+            activity=discord.Game(f'with {guilds} moisturised servers')
+        )
 
         if not self.started_at:
             self.started_at = discord.utils.utcnow()
             logger.info(f'\nLogged in as {self.user}\n{sep}\n')
         else:
             logger.info(f'\nRelogged in after disconnect!\n{sep}\n')
-        
+
         if not self.synced:
             await self.wait_until_ready()
             await self.tree.sync(guild=None)  # noqa
             self.synced = True
+            logger.info('Application commands synced.')
+
+    @property
+    def setup_logging(self):
+        return setup_logging
+
+    @property
+    def config(self):
+        return __import__('config')
 
 
 client = MoistBot()
@@ -112,7 +126,7 @@ if __name__ == '__main__':
     @contextmanager
     def setup_logging():
         log = logging.getLogger()
-    
+
         try:
             discord.utils.setup_logging(level=logging.DEBUG)
             # __enter__
@@ -139,7 +153,7 @@ if __name__ == '__main__':
                 logging.Formatter(fmt, dt_fmt, style='{')
             )
             log.addHandler(file_handler)
-    
+
             yield
         finally:
             # __exit__
