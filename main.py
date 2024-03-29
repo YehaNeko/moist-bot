@@ -55,6 +55,7 @@ class MoistBot(commands.Bot):
             intents=intents,
         )
         self.started_at: Optional[datetime] = None
+        self.cooldowns: dict[int, datetime] = {}
         self.synced: bool = True
 
     async def load_cogs(self) -> None:
@@ -70,7 +71,9 @@ class MoistBot(commands.Bot):
         self.session = aiohttp.ClientSession()
         await asyncio.create_task(self.load_cogs())
 
-    async def get_context(self, origin: Message | Interaction, /, *, cls: Context = Context) -> Context:
+    async def get_context(
+        self, origin: Message | Interaction, /, *, cls: Context = Context
+    ) -> Context:
         return await super().get_context(origin, cls=cls)  # type: ignore
 
     async def process_commands(self, message: Message, /) -> None:
@@ -80,7 +83,9 @@ class MoistBot(commands.Bot):
         ctx: Context = await self.get_context(message)
 
         if ctx.command is not None:
-            logger.debug(f'Command in guild \'{ctx.guild}\', by {ctx.author}, with command \'{ctx.command}\'\n')
+            logger.debug(
+                f'Command in guild \'{ctx.guild}\', by {ctx.author}, with command \'{ctx.command}\'\n'
+            )
 
         await self.invoke(ctx)
 
