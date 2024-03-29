@@ -4,15 +4,14 @@ import discord
 from config import TOKEN
 from discord.ext import commands
 from cogs.utils.context import Context
+from utils.setup_logging import setup_logging
 
 import logging
-from logging.handlers import RotatingFileHandler
 
 import os
 import asyncio
 import aiohttp
 from datetime import datetime
-from contextlib import contextmanager
 from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Optional
 
@@ -85,6 +84,9 @@ class MoistBot(commands.Bot):
 
         await self.invoke(ctx)
 
+    async def start(self, token: str = TOKEN, *, reconnect: bool = True) -> None:
+        await super().start(token=token, reconnect=reconnect)
+
     async def close(self) -> None:
         await self.session.close()
         await super().close()
@@ -117,51 +119,12 @@ class MoistBot(commands.Bot):
         return __import__('config')
 
 
-client = MoistBot()
+async def run_bot() -> None:
+    with setup_logging():
+        async with MoistBot() as client:
+            await client.start()
 
 
 # Prevent multiple bot logins
 if __name__ == '__main__':
-
-    @contextmanager
-    def setup_logging():
-        log = logging.getLogger()
-
-        try:
-            discord.utils.setup_logging(level=logging.DEBUG)
-            # __enter__
-            logging.getLogger('discord').setLevel(logging.INFO)
-            logging.getLogger('discord.http').setLevel(logging.WARNING)
-            logging.getLogger('discord.gateway').setLevel(logging.DEBUG)
-            # logging.getLogger('discord.state').addFilter(RemoveNoise())
-
-            # Set stream handlers to INFO level
-            for handler in log.handlers:
-                if isinstance(handler, logging.StreamHandler):
-                    handler.setLevel(logging.INFO)
-
-            # Setup file logging
-            max_bytes = 32 * 1024 * 1024  # 32 MiB
-            dt_fmt = '%Y-%m-%d %H:%M:%S'
-            fmt = '[{asctime}] [{levelname:<8}] {name}: {message}'
-
-            file_handler = RotatingFileHandler(
-                filename='discord.log', encoding='utf-8', mode='w', maxBytes=max_bytes, backupCount=356
-            )
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(
-                logging.Formatter(fmt, dt_fmt, style='{')
-            )
-            log.addHandler(file_handler)
-
-            yield
-        finally:
-            # __exit__
-            handlers = log.handlers[:]
-            for handler in handlers:
-                handler.close()
-                log.removeHandler(handler)
-
-    # Run bot
-    with setup_logging():
-        client.run(TOKEN, log_handler=None)
+    asyncio.run(run_bot())
