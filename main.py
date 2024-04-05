@@ -11,6 +11,7 @@ import logging
 import os
 import asyncio
 import aiohttp
+import asqlite
 from datetime import datetime
 from concurrent.futures import ProcessPoolExecutor
 from typing import TYPE_CHECKING, Optional
@@ -31,6 +32,7 @@ def _get_prefix(bot, message):
 class MoistBot(commands.Bot):
     executor: ProcessPoolExecutor
     session: aiohttp.ClientSession
+    pool: asqlite.Pool
 
     def __init__(self):
         allowed_mentions = discord.AllowedMentions(
@@ -72,7 +74,7 @@ class MoistBot(commands.Bot):
         await asyncio.create_task(self.load_cogs())
 
     async def get_context(
-        self, origin: Message | Interaction, /, *, cls: Context = Context
+        self, origin: Message | Interaction, /, *, cls: Context = Context  # type: ignore
     ) -> Context:
         return await super().get_context(origin, cls=cls)  # type: ignore
 
@@ -93,8 +95,10 @@ class MoistBot(commands.Bot):
         await super().start(token=token, reconnect=reconnect)
 
     async def close(self) -> None:
-        await self.session.close()
         await super().close()
+        self.executor.shutdown()
+        await self.session.close()
+        await self.pool.close()
         logger.info('Bot closed.')
 
     async def on_ready(self) -> None:
@@ -124,9 +128,33 @@ class MoistBot(commands.Bot):
         return __import__('config')
 
 
+async def setup_db_tables(conn: asqlite.Connection) -> None:
+    async with conn:
+        query = """--sql
+            CREATE TABLE
+                IF NOT EXISTS pfg_param_cache (
+                    user_id INTEGER PRIMARY KEY,
+                    damages TEXT DEFAULT '[]', -- JSON array
+                    ranges TEXT DEFAULT '[]', -- JSON array
+                    multiplier REAL DEFAULT 1.0,
+                    rpm REAL
+                )
+        """
+        await conn.execute(query)
+
+
 async def run_bot() -> None:
     with setup_logging():
+
+        # Setup database
+        pool = await asqlite.create_pool('moist.db')
+
+        async with pool.acquire() as conn:
+            await setup_db_tables(conn)
+
+        # Start the bot
         async with MoistBot() as client:
+            client.pool = pool
             await client.start()
 
 
