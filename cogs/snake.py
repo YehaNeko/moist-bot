@@ -134,7 +134,7 @@ class SnakeGameContainer:
         self.field_dim = np.array((size_x, size_y), dtype='uint8')
         self.field_area: int = self.field_dim.prod()
 
-        self.empty_field = np.full(self.field_dim, self.assets['empty'], dtype='unicode_')
+        self.empty_field = np.full(self.field_dim, self.assets['empty'], dtype='str_')
         self.field = self.empty_field.copy()
         self.rendered_field: str = ''
 
@@ -292,8 +292,6 @@ labels = {
 
 
 class SnakeGameView(discord.ui.View):
-    last_opposite_button: discord.ui.Button
-    opposite_button: discord.ui.Button
     timeout: float
     _tm_fmt: str
 
@@ -311,6 +309,8 @@ class SnakeGameView(discord.ui.View):
         self.embed: discord.Embed = embed
         self.message: discord.Message = message  # type: ignore
         self.game_instance: SnakeGameContainer = game_instance
+        self.opposite_button: discord.ui.Button = None  # type: ignore
+        self.last_opposite_button: discord.ui.Button = None  # type: ignore
 
         # Debug extras
         self._perf_i_check: int = 0
