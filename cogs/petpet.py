@@ -120,7 +120,7 @@ class PetPetCreator:
     ) -> Image.Image:
         """Generate a smooth ellipse mask"""
 
-        # Upscaled ellipse mask
+        # Up-scaled ellipse mask
         x, y = start_size
         mask = Image.new('L', start_size)
         draw = ImageDraw.Draw(mask)
@@ -131,17 +131,18 @@ class PetPetCreator:
         return mask
 
 
-class AvatarEmbed(discord.Embed):
+class PetPetEmbed(discord.Embed):
     def __init__(
         self,
         user: discord.User,
     ):
         super().__init__(
             color=user.accent_color or discord.Color.random(),
+            type='image',
         )
-        self.set_image(url='attachment://image.gif')
+        self.set_image(url='attachment://petpet.gif')
         self.set_author(
-            name=f'{user.display_name}\'s petpet', icon_url='attachment://image.gif'
+            name=f'{user.display_name}\'s petpet', icon_url='attachment://petpet.gif'
         )
 
 
@@ -163,7 +164,7 @@ class PetPet(commands.Cog):
         reply = ctx.replied_message
         img_buffer = BytesIO()
 
-        # Fetch emoji bytes
+        # Fetch image bytes
         # Order of priority: specified user -> attachment -> reply attachment -> author
         if user != ctx.author:
             await user.display_avatar.with_format('png').save(fp=img_buffer)
@@ -179,7 +180,7 @@ class PetPet(commands.Cog):
 
         # Send image
         file = discord.File(fp=img_buffer, filename='petpet.gif')
-        await ctx.reply(file=file, embed=AvatarEmbed(user))
+        await ctx.reply(file=file, embed=PetPetEmbed(user))
 
 
 async def setup(client: MoistBot) -> None:
