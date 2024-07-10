@@ -13,12 +13,13 @@ from inspect import cleandoc
 from datetime import timedelta
 from numpy.random import default_rng
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional, Literal
+from typing import TYPE_CHECKING, Any, Optional, Literal, TypedDict
 from collections.abc import Iterator, Iterable, Generator
 
 if TYPE_CHECKING:
     from main import MoistBot
     from cogs.utils.context import Context
+    from typing import Mapping
 
 
 logger = logging.getLogger('discord.' + __name__)
@@ -96,6 +97,13 @@ class IterableRepeater:
 
     def __repr__(self) -> Any:
         return self.item
+    
+
+class SnakeGameAssets(TypedDict):
+    empty: str
+    apple: str
+    snake_head: str
+    snake_body: IterableRepeater
 
 
 class SnakeGameContainer:
@@ -107,7 +115,7 @@ class SnakeGameContainer:
         'perf_move_snake_begin', 'perf_move_snake_end', 'perf_render_begin', 'perf_render_end'
     )
 
-    assets: dict[str, np.unicode_ | IterableRepeater] = {
+    assets: SnakeGameAssets = {
         'empty': '⬛',
         'apple': '🟥',
         'snake_head': '🟢',
@@ -284,6 +292,9 @@ labels = {
 
 
 class SnakeGameView(discord.ui.View):
+    last_opposite_button: discord.ui.Button
+    opposite_button: discord.ui.Button
+    timeout: float
     _tm_fmt: str
 
     def __init__(
@@ -298,11 +309,10 @@ class SnakeGameView(discord.ui.View):
         super().__init__(timeout=timeout)
         self.ctx: Context = ctx
         self.embed: discord.Embed = embed
-        self.message: Optional[discord.Message] = message
+        self.message: discord.Message = message  # type: ignore
         self.game_instance: SnakeGameContainer = game_instance
-        self.opposite_button: Optional[discord.ui.Button] = None
-        self.last_opposite_button: Optional[discord.ui.Button] = None
 
+        # Debug extras
         self._perf_i_check: int = 0
         self.perf_await_api_begin: int = 0
         if self.game_instance.perf_timing:
@@ -352,7 +362,7 @@ class SnakeGameView(discord.ui.View):
     async def _on_game_over(self, message: str = ':x: **You died!**') -> None:
         """Function for when the game has ended"""
         self.embed.description = self.game_instance.rendered_field
-        self.embed.colour = discord.Color.dark_red()
+        self.embed.color = discord.Color.dark_red()
 
         await self.message.edit(
             content=f'{message} Final score: {self.game_instance.game_score}',
@@ -509,7 +519,7 @@ the game runs with keyboard controls
 (mostly used for debugging).
 """
 if __name__ == '__main__':
-    import keyboard  # noqa
+    import keyboard  # type: ignore
 
     # Init
     game = SnakeGameContainer(20, 20)
