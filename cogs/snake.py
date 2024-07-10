@@ -27,9 +27,9 @@ logger = logging.getLogger('discord.' + __name__)
 DO_PERF_TIMING: bool = False
 GAME_INTERACTION_LOG = cleandoc(
     """
-Interation \x1b[44mtimings\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m,
+Interaction \x1b[44mtimings\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m,
 in guild \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m:
-Interation start
+Interaction start
 |    +>Event loop start
 |    | |
 |    | Event loop took %sms
@@ -135,7 +135,7 @@ class SnakeGameContainer:
 
         self.snake_head = np.array(
             tuple(map(lambda x: round(x / 2), self.field_dim)),
-            dtype='uint8'
+            dtype='int8'
         )
 
         # By default, generates initial snake bodies to the right of `self.snake_head`,
@@ -189,7 +189,7 @@ class SnakeGameContainer:
         self.snake_body = np.roll(self.snake_body, 1, axis=0)
         self.snake_body.put((0, 1), self.snake_head)
 
-        self.snake_head[:] += np.array((x, y), dtype='uint8')
+        self.snake_head[:] += np.array((x, y), dtype='int8')
 
         # If the snake is about to eat an apple
         if np.array_equal(self.snake_head, self.apple):
@@ -309,7 +309,7 @@ class SnakeGameView(discord.ui.View):
             author = self.ctx.author
             guild = self.ctx.guild
             logger.info(
-                'Interation \x1b[42;1mstarted\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m \n'
+                'Interaction \x1b[42;1mstarted\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m \n'
                 'in guild \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m!',
                 author, author.id,
                 *(guild.name, guild.id) if guild else ('None', 'DMs')
@@ -363,14 +363,14 @@ class SnakeGameView(discord.ui.View):
 
         if self.game_instance.perf_timing:
             logger.info(
-                'Interation \x1b[41;1mended\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m.',
+                'Interaction \x1b[41;1mended\x1b[0m for \x1b[36;1m%s\x1b[0m \x1b[90m(%s)\x1b[0m.',
                 self.ctx.author, self.ctx.author.id
             )
 
     def _set_opposite_button(self, label: str) -> None:
         """Finds and sets the `discord.ui.Button` object
-         that has the specified label from a str
-         """
+        that has the specified label from a str
+        """
         for item in self.children:
             if isinstance(item, discord.ui.Button) and item.label == labels[label]:
                 self.opposite_button = item
