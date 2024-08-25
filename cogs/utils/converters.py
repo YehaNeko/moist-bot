@@ -1,12 +1,34 @@
 from __future__ import annotations
 
 from io import BytesIO
-from urllib.parse import urlparse
+from typing import TYPE_CHECKING, Optional, TypeAlias, Union, overload
 from urllib import error as url_error
-from typing import TYPE_CHECKING, Optional
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from cogs.utils.context import Context
+
+
+N: TypeAlias = Union[int, float]
+
+
+@overload
+def remove_decimal(number: int, ndigits: int = 2) -> int:
+    ...
+
+
+@overload
+def remove_decimal(number: float, ndigits: int = 2) -> N:
+    ...
+
+
+def remove_decimal(number: N, ndigits: int = 2) -> N:
+    if isinstance(number, int):
+        return number
+    elif number.is_integer():
+        return int(number)
+    else:
+        return round(number, ndigits)
 
 
 def is_url(text: str) -> bool:
