@@ -1,22 +1,18 @@
 from __future__ import annotations
 
-import discord
-from discord.ext import commands
-from discord import app_commands, Interaction
+from typing import TYPE_CHECKING, Literal, NamedTuple, Tuple, TypedDict, Union
 
-from typing import (
-    TYPE_CHECKING,
-    NamedTuple,
-    TypedDict,
-    Literal,
-    Union,
-    Tuple
-)
+import discord
+from discord import Interaction, app_commands
+from discord.ext import commands
+
+from cogs.utils.converters import remove_decimal
 
 if TYPE_CHECKING:
-    from main import MoistBot
     from collections.abc import Callable
-    from typing import Optional, Sequence, Self
+    from typing import Optional, Self, Sequence
+
+    from main import MoistBot
 
 
 N = Union[int, float]
@@ -136,7 +132,7 @@ class ConvertModal(discord.ui.Modal):
 
     converted_name_kwargs = InputRecoilKwargs(
         cam='Camera recoil (X, Y, Z)',
-        trans='Translational recoil (Y, X, Z)',
+        trans='Translational recoil (X, Y, Z)',
         rot='Rotational recoil (X, Y, Z)',
     )
 
@@ -156,7 +152,7 @@ class ConvertModal(discord.ui.Modal):
         super().__init__(**kwargs)
 
     @staticmethod
-    def serilize_arg(arg: str) -> tuple[float, ...]:
+    def serialize_arg(arg: str) -> tuple[float, ...]:
         args = (i.replace(',', '') for i in arg.split(' '))
         args = tuple(float(i) for i in filter(None, args))
         return args
@@ -166,7 +162,7 @@ class ConvertModal(discord.ui.Modal):
         args = arg.split('\n', maxsplit=2)[:2]
 
         try:
-            args = tuple(cls.serilize_arg(i) for i in args)
+            args = tuple(cls.serialize_arg(i) for i in args)
         except Exception:  # noqa
             args = None
 
@@ -199,7 +195,7 @@ class ConvertModal(discord.ui.Modal):
                 continue
 
             value = '\n'.join(
-                f'{p.title()}: {", ".join(str(i) for i in getattr(stat, p))}'
+                f'{p.title()}: {", ".join(str(remove_decimal(i)) for i in getattr(stat, p))}'
                 for p in self.recoil_param
             )
             footer.append('{0}: {1}, {2}'.format(k.title(), *kwargs[k]))  # type: ignore
@@ -220,7 +216,7 @@ class ConvertOldToNewModal(ConvertModal, title='Convert old -> new'):
 
     full_name_kwargs = InputRecoilKwargs(
         cam='Min and max cam recoil (X, Y, Z)',
-        trans='Min and max trans recoil (Y, X, Z)',
+        trans='Min and max trans recoil (X, Y, Z)',
         rot='Min and max rot recoil (X, Y, Z)',
     )
 
@@ -231,7 +227,7 @@ class ConvertNewToOldModal(ConvertModal, title='Convert new -> old'):
 
     full_name_kwargs = InputRecoilKwargs(
         cam='Mean and variance cam recoil (X, Y, Z)',
-        trans='Mean and variance trans recoil (Y, X, Z)',
+        trans='Mean and variance trans recoil (X, Y, Z)',
         rot='Mean and variance rot recoil (X, Y, Z)',
     )
 
