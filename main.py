@@ -1,23 +1,25 @@
 from __future__ import annotations
 
+import os
+import asyncio
+import logging
+from datetime import datetime
+from typing import TYPE_CHECKING
+from concurrent.futures import ProcessPoolExecutor
+
 import discord
-from config import TOKEN
+import discord.utils
 from discord.ext import commands
+
+import aiohttp
+import asqlite
+
+from config import TOKEN
 from cogs.utils.context import Context
 from utils.setup_logging import setup_logging
 
-import logging
-
-import os
-import asyncio
-import aiohttp
-import asqlite
-from datetime import datetime
-from concurrent.futures import ProcessPoolExecutor
-from typing import TYPE_CHECKING, Optional
-
 if TYPE_CHECKING:
-    from discord import Message, Interaction
+    from discord import Interaction, Message
 
 
 logger = logging.getLogger('discord.' + __name__)
@@ -56,7 +58,7 @@ class MoistBot(commands.Bot):
             case_insensitive=True,
             intents=intents,
         )
-        self.started_at: Optional[datetime] = None
+        self.started_at: datetime = discord.utils.utcnow()
         self.cooldowns: dict[int, datetime] = {}
         self.synced: bool = True
 

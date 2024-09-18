@@ -1,25 +1,26 @@
 from __future__ import annotations
 
-import discord
-import discord.utils
-from discord.ext import commands
-from discord import app_commands
-
 import time
 import logging
-import numpy as np
 from functools import wraps
 from inspect import cleandoc
 from datetime import timedelta
-from numpy.random import default_rng
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Optional, Literal, TypedDict
-from collections.abc import Iterator, Iterable, Generator
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, cast
+
+import discord
+import discord.utils
+from discord import app_commands
+from discord.ext import commands
+
+import numpy as np
+from numpy.random import default_rng
 
 if TYPE_CHECKING:
-    from main import MoistBot
+    from collections.abc import Callable, Generator, Iterator, Iterable
+
     from cogs.utils.context import Context
-    from typing import Mapping
+    from main import MoistBot
 
 
 logger = logging.getLogger('discord.' + __name__)
@@ -49,11 +50,14 @@ Full interaction (including overheads) took %sms
 )
 
 
-def perf_timer(begin_out: str = '', end_out: str = ''):
-    def inner(func):
+def perf_timer[**P](
+    begin_out: str | None = None, end_out: str | None = None) -> Callable[
+    [Callable[P, None]], Callable[P, None]
+]:
+    def inner(func: Callable[P, None]) -> Callable[P, None]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            cls = args[0]
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> None:
+            cls = cast(SnakeGameContainer, args[0])
 
             # Skip
             if not cls.perf_timing:
@@ -67,12 +71,12 @@ def perf_timer(begin_out: str = '', end_out: str = ''):
                 setattr(cls, end_out, time.perf_counter_ns())
 
         return wrapper
-
     return inner
 
 
 class IterableRepeater:
     """Infinitely returns the next element of any iterable."""
+
     __slots__ = ('_items', '_item_generator')
 
     def __init__(self, items: Iterable[Any]) -> None:
@@ -97,7 +101,7 @@ class IterableRepeater:
 
     def __repr__(self) -> Any:
         return self.item
-    
+
 
 class SnakeGameAssets(TypedDict):
     empty: str

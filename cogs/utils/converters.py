@@ -43,7 +43,7 @@ async def get_media_from_ctx(
     ctx: Context,
     arg: Optional[str] = None,
     buffer: Optional[BytesIO] = None
-) -> BytesIO | bool:
+) -> Optional[BytesIO]:
 
     buffer = buffer or BytesIO()
     reply = ctx.replied_message
@@ -60,7 +60,7 @@ async def get_media_from_ctx(
             media = await bot.http.get_from_cdn(reply.content)
 
     if not media:
-        return False
+        return None
 
     buffer.write(media)
     buffer.seek(0)

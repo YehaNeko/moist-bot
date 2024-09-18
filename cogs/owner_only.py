@@ -1,30 +1,32 @@
 from __future__ import annotations
 
-import discord
-import discord.utils
-from discord.ext import commands
-from cogs.utils.converters import get_media_from_ctx
-from config import GUILD_OBJECT
-
 import io
 import os
 import sys
-import psutil
 import asyncio
 import inspect
 import logging
 import textwrap
 import traceback
 from contextlib import redirect_stdout
-from jishaku.modules import package_version
 from unicodedata import name as unicodedata_name
+from typing import TYPE_CHECKING, Any, Literal, Optional
 from importlib.metadata import distribution, packages_distributions
-from typing import TYPE_CHECKING, Optional, Literal, Any
 
 # Extra imports for eval command
+import datetime  # noqa
 import math  # noqa
 import time  # noqa
-import datetime  # noqa
+
+import psutil
+from jishaku.modules import package_version
+
+import discord
+import discord.utils
+from discord.ext import commands
+
+from cogs.utils.converters import get_media_from_ctx
+from config import GUILD_OBJECT
 
 if TYPE_CHECKING:
     from main import MoistBot
@@ -33,6 +35,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger('discord.' + __name__)
 # noinspection PyBroadException
+# pylint: disable=broad-exception-caught
 
 
 # fmt: off
@@ -237,7 +240,7 @@ class OwnerOnly(commands.Cog):
 
     @commands.command()
     async def update_status(self, ctx: Context):
-        """Update the bot's status."""
+        """Update the bots status."""
         guilds = len(self.client.guilds)
         await self.client.change_presence(activity=discord.Game(f'with {guilds} moisturized servers'))
         await ctx.send(':white_check_mark: Status updated.')
@@ -283,7 +286,7 @@ class OwnerOnly(commands.Cog):
         await ctx.reply(f':white_check_mark: Added emoji :{alias}:')
 
     @emoji_add.error
-    async def on_error(self, ctx: Context, error: discord.DiscordException):
+    async def emoji_add_error(self, ctx: Context, error: discord.DiscordException):
         error = getattr(error, 'original', error)
 
         if isinstance(error, discord.Forbidden):
@@ -334,7 +337,7 @@ class OwnerOnly(commands.Cog):
         await ctx.reply(f':white_check_mark: Added sticker `{flags.alias}`')
 
     @sticker_add.error
-    async def on_error(self, ctx: Context, error: discord.DiscordException):
+    async def sticker_add_error(self, ctx: Context, error: discord.DiscordException):
         error = getattr(error, 'original', error)
 
         if isinstance(error, discord.Forbidden):
@@ -354,8 +357,12 @@ class OwnerOnly(commands.Cog):
     @sticker.command(name='remove', aliases=['del', 'delete'])
     async def sticker_remove(self, ctx: Context, alias: str):
         """Delete a Sticker from the guild"""
-        # error handling? never heard of it :3
+
         sticker = discord.utils.get(ctx.guild.stickers, name=alias)
+        if sticker is None:
+            await ctx.reply(':no_entry: Sticker not found.')
+            return
+        
         await ctx.guild.delete_sticker(sticker)
         await ctx.reply(':white_check_mark: Deleted sticker.')
 
@@ -363,17 +370,18 @@ class OwnerOnly(commands.Cog):
     async def _eval(self, ctx: Context, *, body: str):
         """Evaluates a code"""
 
-        """
-        I'm sorry but this was way too cool not to yoink :3
-        https://github.com/Rapptz/RoboDanny/blob/a52a212d1fff1024fb00c14b9e125071f87e0323/cogs/admin.py#L215C31-L215C31
-        """
+        
+        # I'm sorry but this was way too cool not to yoink :3
+        # https://github.com/Rapptz/RoboDanny/blob/a52a212d1fff1024fb00c14b9e125071f87e0323/cogs/admin.py#L215C31-L215C31
+        
 
         env = {
-            'client': self.client,
             'ctx': ctx,
-            'channel': ctx.channel,
-            'author': ctx.author,
+            'self': self,
             'guild': ctx.guild,
+            'author': ctx.author,
+            'client': self.client,
+            'channel': ctx.channel,
             'message': ctx.message,
             '_': self._last_result,
         }
@@ -394,7 +402,7 @@ class OwnerOnly(commands.Cog):
         try:
             with redirect_stdout(stdout):
                 ret = await func()
-        except Exception as e:
+        except Exception:
             value = stdout.getvalue()
             await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
         else:
@@ -415,10 +423,8 @@ class OwnerOnly(commands.Cog):
     async def repl(self, ctx: Context):
         """Launches an interactive REPL session."""
 
-        """
-        This is so cool I couldn't resist qwq
-        https://github.com/Rapptz/RoboDanny/blob/a52a212d1fff1024fb00c14b9e125071f87e0323/cogs/admin.py#L262
-        """
+        # This is so cool I couldn't resist qwq
+        # https://github.com/Rapptz/RoboDanny/blob/a52a212d1fff1024fb00c14b9e125071f87e0323/cogs/admin.py#L262
 
         variables = {
             'ctx': ctx,
@@ -483,7 +489,7 @@ class OwnerOnly(commands.Cog):
                     result = executor(code, variables)
                     if inspect.isawaitable(result):
                         result = await result
-            except Exception as e:
+            except Exception:
                 value = stdout.getvalue()
                 fmt = f'```py\n{value}{traceback.format_exc()}\n```'
             else:
@@ -511,12 +517,9 @@ class OwnerOnly(commands.Cog):
     async def _bot_stats(self, ctx: Context):
         """Various bot stat monitoring tools."""
 
-        # I forgor💀 from where but I yoinked this somewhere from
-        # github.com/Rapptz/RoboDanny/tree/rewrite/cogs
-
-        HEALTHY = discord.Colour(value=0x43B581)
-        UNHEALTHY = discord.Colour(value=0xF04947)
-        # WARNING = discord.Colour(value=0xF09E47)
+        HEALTHY = discord.Color(value=0x43B581)
+        UNHEALTHY = discord.Color(value=0xF04947)
+        # WARNING = discord.Color(value=0xF09E47)
 
         # Process stats
         process = self.process
@@ -568,7 +571,7 @@ class OwnerOnly(commands.Cog):
 
         embed = discord.Embed(
             title='Bot Stats Report',
-            colour=HEALTHY,
+            color=HEALTHY,
             timestamp=discord.utils.utcnow()
         ).add_field(
             name='Process',
@@ -584,7 +587,7 @@ class OwnerOnly(commands.Cog):
                   f'Virtual: {virtual_memory:.2f} MiB',
             inline=True
         ).add_field(
-            name=f'Cache',
+            name='Cache',
             value=f'Guilds: {len(self.client.guilds)}\n'
                   f'Users: {len(self.client.users)}\n'
                   f'Messages: {message_cache}',
@@ -612,7 +615,7 @@ class OwnerOnly(commands.Cog):
         description.append(f'Global Rate Limit: {global_rate_limit}')
 
         if global_rate_limit:
-            embed.colour = UNHEALTHY
+            embed.color = UNHEALTHY
 
         embed.description = '\n'.join(description)
         await ctx.reply(embed=embed)

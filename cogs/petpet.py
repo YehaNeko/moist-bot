@@ -23,7 +23,7 @@ for pet_img in os.listdir(PET_HAND_PATH):
     pet_img = (
         Image.open(os.path.join(PET_HAND_PATH, pet_img))
         .convert('RGBA')
-        .resize(RESOLUTION, resample=Image.BICUBIC)
+        .resize(RESOLUTION, resample=Image.Resampling.BICUBIC)
     )
     PET_HAND_FRAMES.append(pet_img)
 
@@ -78,7 +78,7 @@ class PetPetCreator:
             box = round(offsetX * x), round(offsetY * y)
 
             new_img = self._base_img.resize(new_size)
-            canvas = Image.new('RGBA', size=self.resolution, color=(255, 255, 255, 0))
+            canvas = Image.new('RGBA', size=(x + 10, y), color=(255, 255, 255, 0))
             canvas.paste(new_img, box=box)
 
             pat_hand = self._pet_hand_frames[i]
@@ -88,14 +88,10 @@ class PetPetCreator:
 
     def _render_gif(self, durations: Union[int, list[int]] = 20) -> None:
         new_frames: list[Image.Image] = []
-        for frame in self.frames:
-            # wtf is this logic and why is it here??
-            # frame_copy = frame.copy().convert(mode='RGBA')
-            # frame_copy.thumbnail(size=frame.size, reducing_gap=3.0)
 
+        for frame in self.frames:
             self._converter.img_rgba = frame
             frame_p = self._converter.process()
-
             new_frames.append(frame_p)
 
         output_image = new_frames[0]
@@ -118,7 +114,7 @@ class PetPetCreator:
         final_size: tuple[int, int],
         descale: Union[int, float] = 0,
     ) -> Image.Image:
-        """Generate a smooth ellipse mask"""
+        """Generate a smooth ellipse mask."""
 
         # Up-scaled ellipse mask
         x, y = start_size
@@ -126,7 +122,7 @@ class PetPetCreator:
         draw = ImageDraw.Draw(mask)
         draw.ellipse(xy=(0 + descale, 0 + descale, x - descale, y - descale), fill=255)
 
-        mask = mask.resize(final_size, Image.BICUBIC)  # Downscale to smooth ellipse mask
+        mask = mask.resize(final_size, Image.Resampling.BICUBIC)  # Downscale to smooth ellipse mask
         # mask = mask.filter(ImageFilter.SMOOTH)  # Smooth edges
         return mask
 
@@ -156,7 +152,7 @@ class PetPet(commands.Cog):
         return PetPetCreator(img_buffer).create_gif()
 
     @commands.cooldown(rate=1, per=4, type=commands.BucketType.user)
-    @app_commands.describe(user='Discord user')
+    @app_commands.describe(user='The target user.')
     @commands.hybrid_command(name='petpet', description='Petpet')
     async def petpet(self, ctx: Context, user: discord.User = commands.Author):
         await ctx.typing()
