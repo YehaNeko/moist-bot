@@ -362,18 +362,16 @@ class OwnerOnly(commands.Cog):
         if sticker is None:
             await ctx.reply(':no_entry: Sticker not found.')
             return
-        
+
         await ctx.guild.delete_sticker(sticker)
         await ctx.reply(':white_check_mark: Deleted sticker.')
 
     @commands.command(hidden=True, name='eval')
     async def _eval(self, ctx: Context, *, body: str):
-        """Evaluates a code"""
+        """Evaluates python code."""
 
-        
         # I'm sorry but this was way too cool not to yoink :3
         # https://github.com/Rapptz/RoboDanny/blob/a52a212d1fff1024fb00c14b9e125071f87e0323/cogs/admin.py#L215C31-L215C31
-        
 
         env = {
             'ctx': ctx,
@@ -428,11 +426,12 @@ class OwnerOnly(commands.Cog):
 
         variables = {
             'ctx': ctx,
+            'self': self,
+            'guild': ctx.guild,
+            'author': ctx.author,
             'client': self.client,
             'message': ctx.message,
-            'guild': ctx.guild,
             'channel': ctx.channel,
-            'author': ctx.author,
             '_': None,
         }
 
@@ -464,7 +463,7 @@ class OwnerOnly(commands.Cog):
             executor = exec
             code = ''
             if cleaned.count('\n') == 0:
-                # single statement, potentially 'eval'
+                # Single statement, potentially 'eval'
                 try:
                     code = compile(cleaned, '<repl session>', 'eval')
                 except SyntaxError:
