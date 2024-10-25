@@ -1,24 +1,27 @@
 from __future__ import annotations
 
+import re
+from typing import (
+    TYPE_CHECKING,
+    NamedTuple,
+    Annotated,
+    TypeAlias,
+    Optional,
+    Sequence,
+    overload,
+    Literal,
+    Union,
+    Self
+)
+
+import orjson
 import discord
 from discord import app_commands
 from discord.ext import commands
 
-import orjson
-from typing import (
-    TYPE_CHECKING,
-    NamedTuple,
-    TypeAlias,
-    Annotated,
-    Sequence,
-    Optional,
-    Literal,
-    Union,
-    Self,
-)
-
 if TYPE_CHECKING:
     import sqlite3
+
     from main import MoistBot
     from utils.context import Context
 
@@ -41,11 +44,23 @@ shots_to_damage: dict[int, N] = {
 }
 
 
+FLOAT_REGEX = re.compile(r'[-+]?[0-9]*\.?[0-9]+')
+
 NO_PREV_DATA_EMBED = discord.Embed(
     title=':x: Error',
     description='No previous command has been run.',
     color=discord.Color.red()
 )
+
+
+@overload
+def remove_decimal(number: int, ndigits: int = 2) -> int:
+    ...
+
+
+@overload
+def remove_decimal(number: float, ndigits: int = 2) -> N:
+    ...
 
 
 def remove_decimal(number: N, ndigits: int = 2) -> N:
@@ -57,10 +72,15 @@ def remove_decimal(number: N, ndigits: int = 2) -> N:
         return round(number, ndigits)
 
 
+class FloatSequenceTransformer(app_commands.Transformer):
+    async def transform(self, interaction: discord.Interaction, value: str) -> tuple[N, ...]:
+        return tuple(map(float, re.findall(FLOAT_REGEX, value)))
+
+
 # fmt: off
 class PfgFlags(commands.FlagConverter, prefix='', delimiter='=', case_insensitive=True):
-    damages: tuple[N, ...] = commands.flag(aliases=['dmg', 'd'], description='The damages of your gun seperated by spaces.')
-    ranges: tuple[N, ...] = commands.flag(aliases=['range', 'r'], description='The ranges of your gun seperated by spaces.')
+    damages: str = commands.flag(aliases=['dmg', 'd'], description='The damages of your gun separated by spaces.')
+    ranges: str = commands.flag(aliases=['range', 'r'], description='The ranges of your gun separated by spaces.')
     multiplier: Annotated[N, Optional[N]] = commands.flag(aliases=['multi', 'm'], default=1, description='The multiplier to use. (Default: 1)')
     rpm: Optional[N] = commands.flag(description='The rpm of your gun. (Optional)')
 # fmt: on
@@ -311,12 +331,7 @@ class PfgunRewrite(commands.Cog):
                     VALUES (?, ?, ?, ?, ?)
                 """
                 await conn.execute(
-                    query,
-                    user_id,
-                    orjson.dumps(damages),
-                    orjson.dumps(ranges),
-                    multiplier,
-                    rpm,
+                    query, user_id, orjson.dumps(damages), orjson.dumps(ranges), multiplier, rpm
                 )
 
     async def _get_params_from_db(self, user_id: int) -> Optional[sqlite3.Row]:
@@ -330,7 +345,7 @@ class PfgunRewrite(commands.Cog):
                 return await conn.fetchone(query, user_id)
 
     @commands.cooldown(rate=1, per=2, type=commands.BucketType.user)
-    @commands.hybrid_group(invoke_without_command=True, fallback='calculate', with_app_command=False)
+    @commands.hybrid_group(invoke_without_command=True, fallback='calculate')
     async def pfg(self, ctx: Context, *, args: PfgFlags):
         """PF Gun STK Calculator - Multipoint."""
 
@@ -345,13 +360,41 @@ class PfgunRewrite(commands.Cog):
             ctx.author.id, args.damages, args.ranges, args.multiplier, args.rpm
         )
 
+    # @pfg.command()
+    # @app_commands.describe(
+    #     damages='The damage values of your gun separated by spaces.',
+    #     ranges='The range values of your gun separated by spaces.',
+    #     multiplier='The multiplier to use.',
+    #     rpm='The RPM to use.',
+    # )
+    # async def calculate(
+    #     self,
+    #     ctx: Context,
+    #     damages: tuple[float, ...],
+    #     ranges: tuple[float, ...],
+    #     multiplier: float = 1.0,
+    #     rpm: Optional[float] = None,
+    # ):
+    #     """PF Gun STK Calculator - Multipoint."""
+    #
+    #     pfg_calc = PfgCalculator(damages, ranges, multiplier, rpm)
+    #     data_points = pfg_calc.calculate_progression()
+    #
+    #     embed = PfgEmbed(data_points, multiplier, rpm)
+    #     await ctx.reply(embed=embed)
+    #
+    #     # Save params to db
+    #     await self._save_params_to_db(
+    #         ctx.author.id, damages, ranges, multiplier, rpm
+    #     )
+
     @commands.cooldown(rate=1, per=2, type=commands.BucketType.user)
     @app_commands.describe(multiplier='The multiplier to use.')
     @pfg.command(aliases=['multi', 'm'])
     async def multiplier(self, ctx: Context, multiplier: float):
         """Change the multiplier paramater of your previous command."""
 
-        # Get paramaters
+        # Get parameters
         row = await self._get_params_from_db(ctx.author.id)
 
         if not row:
@@ -379,7 +422,7 @@ class PfgunRewrite(commands.Cog):
     async def rpm(self, ctx: Context, rpm: float):
         """Change the RPM paramater of your previous command."""
 
-        # Get paramaters
+        # Get parameters
         row = await self._get_params_from_db(ctx.author.id)
 
         if not row:
